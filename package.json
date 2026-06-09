@@ -1,0 +1,25 @@
+{
+  "name": "throughline-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Throughline Studio — conduct social-science research from A to Z. The shippable product that unifies the suite (discover · frame · measure · analyze · write · publish).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}
