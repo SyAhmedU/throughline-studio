@@ -2,12 +2,16 @@
 // Throughline Studio — app shell + routing.
 // ============================================================================
 
+import { lazy, Suspense } from 'react'
 import { BrandBar } from './components/BrandBar'
 import { parseRoute, useHash } from './lib/router'
 import { useCloudSync } from './lib/useCloudSync'
-import { Examples } from './views/Examples'
 import { Hub } from './views/Hub'
 import { ProjectView } from './views/ProjectView'
+
+// Worked examples carry 20 detailed case studies; load that chunk on demand so
+// it never weighs down the hub/workspace.
+const Examples = lazy(() => import('./views/Examples').then((m) => ({ default: m.Examples })))
 
 export default function App() {
   const hash = useHash()
@@ -21,7 +25,9 @@ export default function App() {
         {route.name === 'project' && route.projectId ? (
           <ProjectView projectId={route.projectId} stageId={route.stageId} />
         ) : route.name === 'examples' ? (
-          <Examples slug={route.slug} />
+          <Suspense fallback={<div className="route-loading">Loading examples…</div>}>
+            <Examples slug={route.slug} />
+          </Suspense>
         ) : (
           <Hub />
         )}

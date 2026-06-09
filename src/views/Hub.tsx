@@ -54,7 +54,7 @@ export function Hub() {
               navigate('/examples')
             }}
           >
-            See 10 worked examples
+            See 20 worked examples
           </a>
         </div>
       </section>
@@ -133,7 +133,7 @@ export function Hub() {
               navigate('/examples')
             }}
           >
-            See the throughline walked on 10 real papers <Icon name="arrow" size={14} />
+            See the throughline walked on 20 real papers <Icon name="arrow" size={14} />
           </a>
         </div>
       </section>

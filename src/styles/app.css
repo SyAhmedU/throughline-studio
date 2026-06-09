@@ -1334,6 +1334,7 @@
   .stage-grid { grid-template-columns: 1fr; }
 }
 /* ── Worked examples (case studies) ────────────────────────────────────── */
+.route-loading { padding: 80px 0; text-align: center; color: var(--ink-mute); font-size: 14px; }
 .examples { padding: 40px 0 72px; }
 .ex-head { max-width: 760px; margin: 0 auto 36px; text-align: center; }
 .ex-head > .btn { margin-bottom: 18px; }
@@ -1378,8 +1379,27 @@
 .ex-card-foot {
   display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 12px;
 }
-.ex-card-design { color: var(--ink-mute); }
+.ex-card-design { color: var(--ink-mute); font-family: var(--mono); }
 .ex-card-open { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
+
+.ex-section { margin-bottom: 40px; }
+.ex-section-head { margin-bottom: 16px; }
+.ex-section-title {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-family: var(--serif); font-weight: 600; font-size: 21px; margin: 0;
+}
+.ex-section-count {
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink-mute);
+  border: 1px solid var(--line); border-radius: var(--r-pill); padding: 1px 9px;
+}
+.ex-section-note { font-size: 13.5px; color: var(--ink-mute); margin: 6px 0 0; }
+
+.pace-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: var(--r-pill); white-space: nowrap;
+}
+.pace-short { background: rgba(31, 170, 89, .15); color: #1faa59; }
+.pace-long { background: var(--grad-soft); color: var(--accent-2); }
 
 .cs-kicker {
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;

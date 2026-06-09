@@ -7,7 +7,7 @@
 // ============================================================================
 
 import { Icon } from '../components/Icon'
-import { apaRef, CASE_STUDIES, caseStudy, doiUrl, type CaseStudy } from '../lib/caseStudies'
+import { apaRef, CASE_STUDIES, caseStudy, doiUrl, paceOf, type CaseStudy } from '../lib/caseStudies'
 import { navigate } from '../lib/router'
 import { stageDef } from '../lib/stages'
 
@@ -28,6 +28,8 @@ export function Examples({ slug }: { slug?: string }) {
 
 // ── gallery ─────────────────────────────────────────────────────────────────
 function Gallery() {
+  const shorts = CASE_STUDIES.filter((c) => paceOf(c) === 'short')
+  const longs = CASE_STUDIES.filter((c) => paceOf(c) === 'long')
   return (
     <div className="examples">
       <header className="ex-head">
@@ -35,46 +37,93 @@ function Gallery() {
           <Icon name="back" size={14} /> Home
         </button>
         <h1 className="ex-title">
-          Ten real papers, <span className="grad-text">walked A&nbsp;→&nbsp;Z</span>
+          {CASE_STUDIES.length} real papers, <span className="grad-text">walked A&nbsp;→&nbsp;Z</span>
         </h1>
         <p className="ex-sub">
-          Each is a real, published study — author, journal, and DOI verified. The seven-stage
-          journey is an <strong>illustrative reconstruction</strong>: these papers predate
-          Throughline Studio, so it shows how a researcher producing the same work today would move
-          through the suite — what they’d do at each stage, why that tool, and why not the
-          alternatives.
+          Every paper is real — author, journal, and DOI verified. The seven-stage journey is an{' '}
+          <strong>illustrative reconstruction</strong> (these papers predate Throughline Studio):
+          what a researcher producing the same work today would do at each stage, why that tool, and
+          why not the alternatives. Grouped by pace — <strong>quick-turnaround studies</strong> done
+          in weeks, and <strong>long builds</strong> that run for months or years.
         </p>
       </header>
 
+      <ExSection
+        title="Short, quick-turnaround studies"
+        pace="short"
+        note="Single experiments, secondary-data analyses, and contained field trials — weeks to a few months."
+        items={shorts}
+      />
+      <ExSection
+        title="Long, multi-year studies"
+        pace="long"
+        note="Field studies, scale development, longitudinal and meta-analytic work — months to years."
+        items={longs}
+      />
+    </div>
+  )
+}
+
+function paceLabel(pace: 'short' | 'long'): string {
+  return pace === 'short' ? '⚡ Short' : '🗓 Long'
+}
+
+function ExSection({
+  title,
+  pace,
+  note,
+  items,
+}: {
+  title: string
+  pace: 'short' | 'long'
+  note: string
+  items: CaseStudy[]
+}) {
+  return (
+    <section className="ex-section">
+      <div className="ex-section-head">
+        <h2 className="ex-section-title">
+          <span className={`pace-chip pace-${pace}`}>{paceLabel(pace)}</span>
+          {title}
+          <span className="ex-section-count">{items.length}</span>
+        </h2>
+        <p className="ex-section-note">{note}</p>
+      </div>
       <div className="ex-grid">
-        {CASE_STUDIES.map((c) => (
-          <article
-            key={c.slug}
-            className="ex-card"
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(`/examples/${c.slug}`)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') navigate(`/examples/${c.slug}`)
-            }}
-          >
-            <div className="ex-card-meta">
-              <span className="ex-card-journal">{c.journal}</span>
-              <span className="ex-card-year">{c.year}</span>
-            </div>
-            <h3 className="ex-card-title">{c.title}</h3>
-            <p className="ex-card-authors">{c.authors}</p>
-            <p className="ex-card-angle">{c.angle}</p>
-            <div className="ex-card-foot">
-              <span className="ex-card-design">{c.design.split(' · ')[0]}</span>
-              <span className="ex-card-open">
-                Walkthrough <Icon name="arrow" size={13} />
-              </span>
-            </div>
-          </article>
+        {items.map((c) => (
+          <ExCard key={c.slug} c={c} />
         ))}
       </div>
-    </div>
+    </section>
+  )
+}
+
+function ExCard({ c }: { c: CaseStudy }) {
+  const open = () => navigate(`/examples/${c.slug}`)
+  return (
+    <article
+      className="ex-card"
+      role="button"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') open()
+      }}
+    >
+      <div className="ex-card-meta">
+        <span className="ex-card-journal">{c.journal}</span>
+        <span className="ex-card-year">{c.year}</span>
+      </div>
+      <h3 className="ex-card-title">{c.title}</h3>
+      <p className="ex-card-authors">{c.authors}</p>
+      <p className="ex-card-angle">{c.angle}</p>
+      <div className="ex-card-foot">
+        <span className="ex-card-design">{c.totalTime}</span>
+        <span className="ex-card-open">
+          Walkthrough <Icon name="arrow" size={13} />
+        </span>
+      </div>
+    </article>
   )
 }
 
@@ -98,6 +147,9 @@ function CaseStudyDetail({ study }: { study: CaseStudy }) {
         <h1 className="cs-title">{study.title}</h1>
         <p className="cs-authors">{study.authors}</p>
         <div className="cs-links">
+          <span className={`pace-chip pace-${paceOf(study)}`}>
+            {paceOf(study) === 'short' ? '⚡ Short study' : '🗓 Long study'}
+          </span>
           <a className="cs-doi" href={doiUrl(study.doi)} target="_blank" rel="noopener noreferrer">
             <Icon name="external" size={13} /> doi.org/{study.doi}
           </a>
