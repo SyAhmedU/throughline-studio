@@ -7,12 +7,13 @@
 import { useState } from 'react'
 import { signOut, userInitial, userLabel } from '../lib/auth'
 import { navigate } from '../lib/router'
+import type { SyncStatus } from '../lib/sync'
 import { getTheme, toggleTheme, type Theme } from '../lib/theme'
 import { useAuth } from '../lib/useAuth'
 import { AuthModal } from './AuthModal'
 import { Icon } from './Icon'
 
-export function BrandBar() {
+export function BrandBar({ syncStatus }: { syncStatus?: SyncStatus | null }) {
   const [theme, setThemeState] = useState<Theme>(getTheme())
   const { user, loading, configured } = useAuth()
   const [authOpen, setAuthOpen] = useState(false)
@@ -40,6 +41,8 @@ export function BrandBar() {
       <a className="bar-link" href="https://syahmedu.github.io/nexus/" target="_blank" rel="noopener noreferrer">
         All projects <Icon name="external" size={13} />
       </a>
+
+      {syncStatus && <SyncPill status={syncStatus} />}
 
       {/* auth control */}
       {configured && !loading && (
@@ -94,5 +97,23 @@ export function BrandBar() {
 
       {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </header>
+  )
+}
+
+/** A small "cloud backup" indicator shown only while signed in. */
+function SyncPill({ status }: { status: SyncStatus }) {
+  if (status === 'idle') return null
+  const label = status === 'syncing' ? 'Syncing…' : status === 'error' ? 'Sync error' : 'Synced'
+  const title =
+    status === 'error'
+      ? 'Could not reach the cloud — your work is saved locally and will retry on the next change.'
+      : status === 'synced'
+        ? 'Your projects are backed up to your account and follow you across devices.'
+        : 'Saving your projects to your account…'
+  return (
+    <span className={`sync-pill sync-${status}`} title={title} aria-live="polite">
+      <span className="sync-dot" aria-hidden="true" />
+      {label}
+    </span>
   )
 }

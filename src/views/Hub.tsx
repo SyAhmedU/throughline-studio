@@ -4,11 +4,11 @@
 // (create / resume / delete). This is the front door of the shippable product.
 // ============================================================================
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { navigate } from '../lib/router'
 import { STAGES } from '../lib/stages'
-import { createProject, deleteProject, loadProjects, progress } from '../lib/store'
+import { createProject, deleteProject, loadProjects, progress, subscribe } from '../lib/store'
 import type { Project } from '../lib/types'
 
 export function Hub() {
@@ -18,6 +18,10 @@ export function Hub() {
   function refresh() {
     setProjects(loadProjects())
   }
+
+  // Refresh when the store changes — including projects pulled down from the
+  // cloud after sign-in (which arrive asynchronously).
+  useEffect(() => subscribe(refresh), [])
 
   function start(title: string, field: string) {
     const p = createProject(title, field)

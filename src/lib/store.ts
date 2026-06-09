@@ -15,6 +15,42 @@ function now(): number {
   return Date.now()
 }
 
+// ── cloud-sync seam ─────────────────────────────────────────────────────────
+// The store stays the single source of truth and works fully offline. When a
+// user signs in, sync.ts registers a sink here: every local write is mirrored
+// up to the cloud, and subscribers (the views) are notified so pulled-down
+// projects appear. Both are no-ops until wired, so the store never depends on
+// the network.
+export interface StoreSink {
+  push(p: Project): void
+  remove(id: string): void
+}
+let sink: StoreSink | null = null
+export function setSink(s: StoreSink | null): void {
+  sink = s
+}
+
+const subscribers = new Set<() => void>()
+export function subscribe(cb: () => void): () => void {
+  subscribers.add(cb)
+  return () => {
+    subscribers.delete(cb)
+  }
+}
+function emit(): void {
+  // Defer so subscribers never run inside the setState/updater that triggered
+  // the write (avoids nested-render warnings and cursor jumps in inputs).
+  queueMicrotask(() => {
+    subscribers.forEach((cb) => {
+      try {
+        cb()
+      } catch {
+        /* a bad subscriber must not break persistence */
+      }
+    })
+  })
+}
+
 function emptyStage(status: StageStatus): StageState {
   return { status, notes: '', updatedAt: now(), data: {} }
 }
@@ -44,6 +80,7 @@ function persist(list: Project[]): void {
   } catch {
     /* quota / private mode — keep working in memory for this session */
   }
+  emit()
 }
 
 export function getProject(id: string): Project | undefined {
@@ -66,6 +103,7 @@ export function createProject(title: string, field: string): Project {
   list.unshift(p)
   persist(list)
   setActive(p.id)
+  sink?.push(p)
   return p
 }
 
@@ -76,12 +114,41 @@ export function saveProject(p: Project): Project {
   if (i >= 0) list[i] = next
   else list.unshift(next)
   persist(list)
+  sink?.push(next)
   return next
 }
 
 export function deleteProject(id: string): void {
   persist(loadProjects().filter((p) => p.id !== id))
   if (getActive() === id) clearActive()
+  sink?.remove(id)
+}
+
+/**
+ * Merge cloud projects into the local store, last-write-wins by `updatedAt`.
+ * Deliberately does NOT notify the sink — these writes originate FROM the
+ * cloud, so re-pushing them would loop. Persisting emits a change so the views
+ * refresh. Returns the projects that exist only locally; the caller pushes
+ * those up so a device's pre-sign-in work isn't lost.
+ */
+export function mergeRemote(remote: Project[]): { localOnly: Project[] } {
+  const local = loadProjects()
+  const byId = new Map(local.map((p) => [p.id, p] as const))
+  const remoteIds = new Set(remote.map((p) => p.id))
+  let changed = false
+  for (const rp of remote) {
+    const lp = byId.get(rp.id)
+    if (!lp || rp.updatedAt > lp.updatedAt) {
+      byId.set(rp.id, rp)
+      changed = true
+    }
+  }
+  const localOnly = local.filter((p) => !remoteIds.has(p.id))
+  if (changed) {
+    const merged = [...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt)
+    persist(merged)
+  }
+  return { localOnly }
 }
 
 /** Update a single stage's status and return the saved project. */

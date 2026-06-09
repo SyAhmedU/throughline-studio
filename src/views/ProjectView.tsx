@@ -10,7 +10,7 @@ import { Icon } from '../components/Icon'
 import { Spine } from '../components/Spine'
 import { navigate } from '../lib/router'
 import { STAGE_IDS } from '../lib/stages'
-import { getProject, saveProject } from '../lib/store'
+import { getProject, saveProject, subscribe } from '../lib/store'
 import type { Project, StageId } from '../lib/types'
 import { StageShell } from '../stages/StageShell'
 
@@ -25,6 +25,21 @@ export function ProjectView({
 
   useEffect(() => {
     setProject(getProject(projectId))
+  }, [projectId])
+
+  // Pick up store changes from cloud sync: a project that arrives after sign-in
+  // (so a deep-link resolves once it's pulled), or a newer version edited on
+  // another device. Guard on updatedAt so it never clobbers a local edit in
+  // progress (local saves bump updatedAt, so fresh === current → no-op).
+  useEffect(() => {
+    return subscribe(() => {
+      setProject((cur) => {
+        const fresh = getProject(projectId)
+        if (!fresh) return cur
+        if (!cur) return fresh
+        return fresh.updatedAt > cur.updatedAt ? fresh : cur
+      })
+    })
   }, [projectId])
 
   // resolve the active stage from the route, falling back to the project's current
