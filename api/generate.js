@@ -61,12 +61,18 @@ export default async function handler(req, res) {
     }
     res.status(200).json({ text: clean, data })
   } catch (err) {
-    // No gateway auth (no OIDC token, no key) or a gateway error — degrade
-    // gracefully so the client shows its offline state instead of crashing.
+    // Degrade gracefully so the client renders its calm offline state instead
+    // of crashing. 503 (-> client "unavailable") covers everything that's a
+    // configuration/account state rather than a transient fault: missing auth
+    // (no OIDC token / no key) AND the gateway's "add a credit card to unlock
+    // free credits" billing gate, which blocks the whole suite until a card is
+    // on file. Anything else is treated as a transient error (502).
     const msg = String((err && err.message) || err)
-    const noAuth = /api key|unauthor|oidc|credential|gateway_api_key|forbidden|401|403/i.test(msg)
-    res.status(noAuth ? 503 : 502).json({
-      error: noAuth ? 'AI not configured' : 'AI gateway error',
+    const unavailable =
+      /api key|unauthor|oidc|credential|gateway_api_key|forbidden|401|403/i.test(msg) ||
+      /credit card|requires a valid|free credits|billing|quota|insufficient|payment/i.test(msg)
+    res.status(unavailable ? 503 : 502).json({
+      error: unavailable ? 'AI not configured' : 'AI gateway error',
       text: '',
     })
   }
