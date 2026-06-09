@@ -46,8 +46,15 @@ export function Hub() {
           <button className="btn btn-fill btn-lg" onClick={() => setShowNew(true)}>
             <Icon name="plus" size={17} /> New research project
           </button>
-          <a className="btn btn-ghost btn-lg" href="#stages">
-            See the seven stages
+          <a
+            className="btn btn-ghost btn-lg"
+            href="#/examples"
+            onClick={(e) => {
+              e.preventDefault()
+              navigate('/examples')
+            }}
+          >
+            See 10 worked examples
           </a>
         </div>
       </section>
@@ -118,6 +125,17 @@ export function Hub() {
             </li>
           ))}
         </ol>
+        <div className="stages-cta">
+          <a
+            href="#/examples"
+            onClick={(e) => {
+              e.preventDefault()
+              navigate('/examples')
+            }}
+          >
+            See the throughline walked on 10 real papers <Icon name="arrow" size={14} />
+          </a>
+        </div>
       </section>
 
       <footer className="hub-foot">

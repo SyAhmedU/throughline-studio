@@ -3,6 +3,8 @@
 // Routes:  #/                  → hub
 //          #/p/<id>            → project workspace (current stage)
 //          #/p/<id>/<stageId>  → project workspace focused on a stage
+//          #/examples          → worked-examples gallery
+//          #/examples/<slug>   → one worked example (case study)
 // ============================================================================
 
 import { useSyncExternalStore } from 'react'
@@ -31,15 +33,20 @@ export function navigate(to: string): void {
 }
 
 export interface Route {
-  name: 'hub' | 'project'
+  name: 'hub' | 'project' | 'examples'
   projectId?: string
   stageId?: StageId
+  /** case-study slug for #/examples/<slug> */
+  slug?: string
 }
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^\/+/, '').split('/').filter(Boolean)
   if (parts[0] === 'p' && parts[1]) {
     return { name: 'project', projectId: parts[1], stageId: parts[2] as StageId | undefined }
+  }
+  if (parts[0] === 'examples') {
+    return { name: 'examples', slug: parts[1] }
   }
   return { name: 'hub' }
 }
