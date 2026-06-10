@@ -4,8 +4,9 @@
 // verbatim, textbook-verified). Load data (paste / upload / simulated demo),
 // run the social-science staples (descriptives, correlations, reliability,
 // t-test, ANOVA), read the APA write-up, and capture results that carry
-// forward. Deep-links to ToolsScope for the deeper engine (regression,
-// mediation, EFA/CFA).
+// forward. The dataset itself persists on the project (CSV, 200 KB cap) and
+// restores on return. Deep-links to ToolsScope for the deeper engine
+// (regression, mediation, EFA/CFA).
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react'
@@ -19,6 +20,7 @@ import {
   makeDemo,
   numericVars,
   parseDelimited,
+  toDelimited,
   type Dataset,
 } from '../lib/dataset'
 import { deepLink, stageDef } from '../lib/stages'
@@ -47,6 +49,16 @@ interface Capture {
   apa: string
   at: number
 }
+
+/** Dataset persisted on the project (CSV round-trips through parseDelimited).
+ *  Capped so a big upload can't blow localStorage / the cloud-sync row. */
+interface SavedDataset {
+  name: string
+  csv: string
+  simulated?: boolean
+  savedAt: number
+}
+const DS_CAP = 200_000 // chars of CSV (~200 KB)
 
 interface Selections {
   corr: string[]
@@ -85,6 +97,45 @@ export function AnalyzeBody({
   const [analysis, setAnalysis] = useState<Analysis>('descriptives')
   const [sel, setSel] = useState<Selections>({ corr: [], rel: [], ttDV: '', ttG: '', anDV: '', anF: '' })
 
+  const savedDs = (project.stages.analyze?.data as { dataset?: SavedDataset } | undefined)?.dataset
+
+  // restore the dataset persisted on the project (once, on mount)
+  useEffect(() => {
+    if (!savedDs?.csv) return
+    const res = parseDelimited(savedDs.csv, savedDs.name)
+    if (!('error' in res)) setDs({ ...res, simulated: savedDs.simulated })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Adopt a freshly loaded dataset: show it and persist it on the project
+   *  (dropped silently when over the cap — the analyses still run). */
+  function adopt(next: Dataset) {
+    setError(null)
+    setDs(next)
+    const csv = toDelimited(next)
+    const base = { ...(project.stages.analyze.data || {}), datasetName: next.name } as Record<string, unknown>
+    if (csv.length <= DS_CAP) {
+      base.dataset = {
+        name: next.name,
+        csv,
+        ...(next.simulated ? { simulated: true } : {}),
+        savedAt: Date.now(),
+      } satisfies SavedDataset
+    } else {
+      delete base.dataset // a previous, smaller dataset shouldn't resurrect
+    }
+    onChange(setStageData(project, 'analyze', base))
+  }
+
+  function clearDataset() {
+    setDs(null)
+    setError(null)
+    const base = { ...(project.stages.analyze.data || {}) } as Record<string, unknown>
+    delete base.dataset
+    delete base.datasetName
+    onChange(setStageData(project, 'analyze', base))
+  }
+
   // default selections when a dataset loads
   useEffect(() => {
     if (!ds) return
@@ -106,8 +157,7 @@ export function AnalyzeBody({
       setError(res.error)
       return
     }
-    setError(null)
-    setDs(res)
+    adopt(res)
   }
   async function loadFile(file: File) {
     const text = await file.text()
@@ -116,8 +166,7 @@ export function AnalyzeBody({
       setError(res.error)
       return
     }
-    setError(null)
-    setDs(res)
+    adopt(res)
   }
 
   const captures = getCaptures(project)
@@ -170,7 +219,7 @@ export function AnalyzeBody({
               onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])}
             />
           </label>
-          <button className="btn btn-ghost" onClick={() => setDs(makeDemo())}>
+          <button className="btn btn-ghost" onClick={() => adopt(makeDemo())}>
             Load simulated demo
           </button>
         </div>
@@ -190,18 +239,15 @@ export function AnalyzeBody({
           <span className="anz-ds-name">
             {ds.name} {ds.simulated && <span className="anz-sim">simulated</span>}
           </span>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => {
-              setDs(null)
-              setError(null)
-            }}
-          >
+          <button className="btn btn-ghost btn-sm" onClick={clearDataset}>
             Change data
           </button>
         </div>
         <p className="anz-ds-meta">
           {ds.rows.length.toLocaleString()} rows · {ds.variables.length} variables
+          {savedDs?.name === ds.name
+            ? ' · saved with this project'
+            : ' · too large to save with the project — reload it next session'}
         </p>
         <div className="anz-var-chips">
           {ds.variables.map((v) => (

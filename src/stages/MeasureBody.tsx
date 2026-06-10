@@ -2,20 +2,23 @@
 // Throughline Studio — Measure stage workspace.
 // Compose a survey instrument from ScaleScope's 332 validated scales (real
 // reliability, dimensions, citations). Add scales to the project's instrument;
-// it persists and carries to Collect. Item wording isn't published in the
-// catalogue — deep-link to ScaleScope for the items themselves.
+// it persists and carries to Collect. Verbatim item wording is shown inline
+// for the 178 scales that publish it (lazy scale-items.json); the rest
+// deep-link to ScaleScope.
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import {
   domainsOf,
+  loadScaleItems,
   loadScales,
   scaleLink,
   searchScales,
   toSavedScale,
   type SavedScale,
   type Scale,
+  type ScaleItemsMap,
 } from '../lib/scales'
 import { deepLink, stageDef } from '../lib/stages'
 import { setStageData } from '../lib/store'
@@ -26,6 +29,24 @@ const PAGE = 20
 function instrumentOf(p: Project): SavedScale[] {
   const d = p.stages.measure?.data as { scales?: SavedScale[] } | undefined
   return Array.isArray(d?.scales) ? d!.scales! : []
+}
+
+/** Verbatim item wording for one scale (real text from ScaleScope's catalogue). */
+function ItemList({ set }: { set: NonNullable<ScaleItemsMap[number]> }) {
+  return (
+    <div className="ms-items">
+      {set.anchors && <p className="ms-items-anchors">{set.anchors}</p>}
+      <ol className="ms-items-list">
+        {set.items.map((it) => (
+          <li key={it.num} value={it.num}>
+            {it.text}
+            {it.reversed && <span className="ms-item-rev" title="Reverse-scored"> (R)</span>}
+            {it.dimension && <span className="disc-dim"> — {it.dimension}</span>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
 }
 
 export function MeasureBody({
@@ -39,6 +60,8 @@ export function MeasureBody({
 }) {
   const [all, setAll] = useState<Scale[] | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [itemsMap, setItemsMap] = useState<ScaleItemsMap>({})
+  const [open, setOpen] = useState<Set<number>>(new Set())
   const [query, setQuery] = useState('')
   const [domain, setDomain] = useState('')
   const [limit, setLimit] = useState(PAGE)
@@ -48,10 +71,19 @@ export function MeasureBody({
     loadScales()
       .then((s) => alive && (setAll(s), setStatus('ready')))
       .catch(() => alive && setStatus('error'))
+    loadScaleItems().then((m) => alive && setItemsMap(m))
     return () => {
       alive = false
     }
   }, [])
+
+  function toggleItems(id: number) {
+    setOpen((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
   useEffect(() => setLimit(PAGE), [query, domain])
 
   const results = useMemo(() => (all ? searchScales(all, query, domain) : []), [all, query, domain])
@@ -93,7 +125,7 @@ export function MeasureBody({
           <ul className="ms-chosen">
             {instr.map((s) => (
               <li key={s.id}>
-                <div>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <span className="ms-chosen-name">
                     {s.name} {s.abbreviation && <span className="disc-dim">({s.abbreviation})</span>}
                   </span>
@@ -101,9 +133,16 @@ export function MeasureBody({
                     {s.construct} · {s.itemCount} items{s.alphaSummary ? ` · α ${s.alphaSummary}` : ''}
                   </span>
                   {s.citation && <span className="bld-cite">{s.citation}</span>}
+                  {open.has(s.id) && itemsMap[s.id] && <ItemList set={itemsMap[s.id]} />}
                 </div>
                 <div className="ms-chosen-actions">
-                  <a className="disc-fulltool" href={scaleLink(s.id)} target="_blank" rel="noopener noreferrer">items ↗</a>
+                  {itemsMap[s.id] ? (
+                    <button className="disc-fulltool ms-items-toggle" onClick={() => toggleItems(s.id)}>
+                      {open.has(s.id) ? 'hide items' : 'items'}
+                    </button>
+                  ) : (
+                    <a className="disc-fulltool" href={scaleLink(s.id)} target="_blank" rel="noopener noreferrer">items ↗</a>
+                  )}
                   <button className="icon-btn" aria-label="Remove scale" onClick={() => save(instr.filter((x) => x.id !== s.id))}>
                     <Icon name="trash" size={14} />
                   </button>
@@ -167,12 +206,19 @@ export function MeasureBody({
                       ))}
                     </div>
                     {sc.citation && <p className="bld-cite">{sc.citation.authors} ({sc.citation.year}). {sc.citation.title}</p>}
+                    {open.has(sc.id) && itemsMap[sc.id] && <ItemList set={itemsMap[sc.id]} />}
                   </div>
                   <div className="disc-card-actions">
                     <button className={`btn btn-fill btn-sm ${added ? 'is-on' : ''}`} onClick={() => toggle(sc)}>
                       {added ? <><Icon name="check" size={14} /> Added</> : <><Icon name="plus" size={14} /> Add</>}
                     </button>
-                    <a className="btn btn-ghost btn-sm" href={scaleLink(sc.id)} target="_blank" rel="noopener noreferrer">Items</a>
+                    {itemsMap[sc.id] ? (
+                      <button className="btn btn-ghost btn-sm" onClick={() => toggleItems(sc.id)}>
+                        {open.has(sc.id) ? 'Hide items' : 'Show items'}
+                      </button>
+                    ) : (
+                      <a className="btn btn-ghost btn-sm" href={scaleLink(sc.id)} target="_blank" rel="noopener noreferrer">Items</a>
+                    )}
                   </div>
                 </article>
               )

@@ -3,10 +3,12 @@
 // Streams ScaleScope's published catalogue (332 validated measurement scales,
 // the same CORS JSON the suite hub grounds on). Real reliability, dimensions,
 // and citations — the researcher composes an instrument from real scales.
-// Item wording isn't published here; deep-link to ScaleScope for the items.
+// Verbatim item wording comes from a second lazy snapshot (scale-items.json,
+// 178 scales with reproducible items); the rest deep-link to ScaleScope.
 // ============================================================================
 
 const URL = 'https://scalescope.vercel.app/data/scales.json'
+const ITEMS_URL = 'https://scalescope.vercel.app/data/scale-items.json'
 
 export interface ScaleDim {
   name: string
@@ -61,6 +63,38 @@ export function searchScales(all: Scale[], query: string, domain: string): Scale
     ).toLowerCase()
     return terms.every((t) => hay.includes(t))
   })
+}
+
+export interface ScaleItem {
+  num: number
+  text: string
+  dimension?: string
+  reversed?: boolean
+}
+
+export interface ScaleItemSet {
+  anchors?: string
+  items: ScaleItem[]
+}
+
+/** id → verbatim item wording, for the scales that publish it (~178 of 332). */
+export type ScaleItemsMap = Record<number, ScaleItemSet>
+
+let itemsPromise: Promise<ScaleItemsMap> | null = null
+export function loadScaleItems(): Promise<ScaleItemsMap> {
+  if (itemsPromise) return itemsPromise
+  itemsPromise = (async () => {
+    try {
+      const res = await fetch(ITEMS_URL)
+      if (!res.ok) return {}
+      const text = await res.text()
+      const data = JSON.parse(text.replace(/^﻿/, '')) as { items?: ScaleItemsMap }
+      return data.items && typeof data.items === 'object' ? data.items : {}
+    } catch {
+      return {} // graceful: cards fall back to the ScaleScope deep link
+    }
+  })()
+  return itemsPromise
 }
 
 export function domainsOf(all: Scale[]): string[] {

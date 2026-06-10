@@ -105,6 +105,20 @@ export function parseDelimited(text: string, name = 'Pasted data'): Dataset | { 
   return { name, variables, rows }
 }
 
+function csvField(v: Cell): string {
+  if (v === null) return ''
+  const s = String(v)
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s
+}
+
+/** Serialize back to CSV (round-trips through parseDelimited) — used to
+ *  persist the loaded dataset on the project. */
+export function toDelimited(ds: Dataset): string {
+  const lines = [ds.variables.map((v) => csvField(v.name)).join(',')]
+  for (const r of ds.rows) lines.push(r.map(csvField).join(','))
+  return lines.join('\n')
+}
+
 // ── column accessors ───────────────────────────────────────────────────────
 export function column(ds: Dataset, name: string): Cell[] {
   const j = ds.variables.findIndex((v) => v.name === name)
