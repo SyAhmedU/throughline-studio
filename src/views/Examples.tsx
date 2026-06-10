@@ -6,7 +6,9 @@
 // illustrative reconstruction (the papers predate the tool) — stated up front.
 // ============================================================================
 
+import { useState } from 'react'
 import { Icon } from '../components/Icon'
+import { VideoLightbox } from '../components/VideoLightbox'
 import {
   apaRef,
   CASE_STUDIES,
@@ -147,6 +149,9 @@ function ExCard({ c }: { c: CaseStudy }) {
 
 // ── one case study ───────────────────────────────────────────────────────────
 function CaseStudyDetail({ study }: { study: CaseStudy }) {
+  const [showVideo, setShowVideo] = useState(false)
+  const videoSrc = `/examples/videos/${study.slug}.mp4`
+  const posterSrc = `/examples/posters/${study.slug}.jpg`
   const facts: Array<[string, string]> = [
     ['Design', study.design],
     ['Construct', study.construct],
@@ -196,6 +201,18 @@ function CaseStudyDetail({ study }: { study: CaseStudy }) {
         illustrative reconstruction of how Throughline Studio would carry this study from discovery
         to publication — the authors did not use the tool.
       </p>
+
+      {/* narrated walkthrough video */}
+      <button className="cs-video" onClick={() => setShowVideo(true)} aria-label="Watch the narrated walkthrough of this example">
+        <img className="cs-video-poster" src={posterSrc} alt="" loading="lazy" />
+        <span className="hero-tour-overlay">
+          <span className="hero-tour-play">▶</span>
+          Watch this example, narrated — {study.totalTime}, stage by stage
+        </span>
+      </button>
+      {showVideo && (
+        <VideoLightbox src={videoSrc} poster={posterSrc} label="Worked example walkthrough video" onClose={() => setShowVideo(false)} />
+      )}
 
       {/* the seven-stage timeline */}
       <ol className="cs-timeline">

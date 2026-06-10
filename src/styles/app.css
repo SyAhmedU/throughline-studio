@@ -364,6 +364,23 @@
   color: #fff;
 }
 
+.cs-video {
+  display: block;
+  position: relative;
+  width: min(760px, 100%);
+  margin: 26px 0 34px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s var(--ease), transform 0.18s var(--ease);
+}
+.cs-video:hover { border-color: var(--accent); transform: translateY(-2px); }
+.cs-video-poster { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+
 .tour-modal { width: min(1100px, 94vw); display: flex; flex-direction: column; gap: 10px; }
 .tour-modal-video { width: 100%; border-radius: var(--r-lg); border: 1px solid var(--line-2); background: #000; }
 .tour-modal-close { align-self: flex-end; }
