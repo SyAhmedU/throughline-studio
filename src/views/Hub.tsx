@@ -14,6 +14,7 @@ import type { Project } from '../lib/types'
 export function Hub() {
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
   const [showNew, setShowNew] = useState(false)
+  const [showTour, setShowTour] = useState(false)
 
   function refresh() {
     setProjects(loadProjects())
@@ -57,6 +58,30 @@ export function Hub() {
             See 20 worked examples
           </a>
         </div>
+
+        {/* muted living preview; click for the full narrated tour */}
+        <button
+          className="hero-tour"
+          onClick={() => setShowTour(true)}
+          aria-label="Watch the 90-second narrated tour"
+        >
+          <video
+            className="hero-tour-video"
+            src="/tour.mp4"
+            poster="/tour-poster.jpg"
+            muted
+            loop
+            playsInline
+            autoPlay={!prefersReducedMotion()}
+            preload="metadata"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <span className="hero-tour-overlay">
+            <span className="hero-tour-play">▶</span>
+            Watch the 90-second tour — with sound
+          </span>
+        </button>
       </section>
 
       {/* ── Projects shelf ────────────────────────────────────────── */}
@@ -149,6 +174,32 @@ export function Hub() {
       </footer>
 
       {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreate={start} />}
+      {showTour && <TourModal onClose={() => setShowTour(false)} />}
+    </div>
+  )
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function TourModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="tour-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Product tour video">
+        <video className="tour-modal-video" src="/tour.mp4" poster="/tour-poster.jpg" controls autoPlay playsInline />
+        <button className="btn btn-ghost btn-sm tour-modal-close" onClick={onClose}>
+          Close ✕
+        </button>
+      </div>
     </div>
   )
 }

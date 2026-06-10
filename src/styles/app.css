@@ -321,6 +321,53 @@
   flex-wrap: wrap;
 }
 
+/* ── Hero tour video (muted preview → click for sound) ─────────────────── */
+.hero-tour {
+  display: block;
+  position: relative;
+  width: min(720px, 100%);
+  margin: 38px auto 0;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s var(--ease), transform 0.18s var(--ease);
+}
+.hero-tour:hover { border-color: var(--accent); transform: translateY(-2px); }
+.hero-tour-video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.hero-tour-overlay {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(8, 5, 14, 0.72);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.hero-tour-play {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--grad);
+  font-size: 11px;
+  color: #fff;
+}
+
+.tour-modal { width: min(1100px, 94vw); display: flex; flex-direction: column; gap: 10px; }
+.tour-modal-video { width: 100%; border-radius: var(--r-lg); border: 1px solid var(--line-2); background: #000; }
+.tour-modal-close { align-self: flex-end; }
+
 /* ── Sections ──────────────────────────────────────────────────────────── */
 .section-h2 {
   font-family: var(--serif);
