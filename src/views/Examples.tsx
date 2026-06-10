@@ -148,9 +148,13 @@ function ExCard({ c }: { c: CaseStudy }) {
 }
 
 // ── one case study ───────────────────────────────────────────────────────────
+// Walkthrough videos live in the SyAhmedU/throughline-media Pages repo (140 MB
+// of MP4s would bloat this repo and every deploy); posters are small and local.
+const MEDIA_BASE = 'https://syahmedu.github.io/throughline-media'
+
 function CaseStudyDetail({ study }: { study: CaseStudy }) {
   const [showVideo, setShowVideo] = useState(false)
-  const videoSrc = `/examples/videos/${study.slug}.mp4`
+  const videoSrc = `${MEDIA_BASE}/videos/${study.slug}.mp4`
   const posterSrc = `/examples/posters/${study.slug}.jpg`
   const facts: Array<[string, string]> = [
     ['Design', study.design],
