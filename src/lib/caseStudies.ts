@@ -1499,6 +1499,47 @@ export function paceOf(c: CaseStudy): 'short' | 'long' {
   return c.tier ?? 'long'
 }
 
+// Seed values for "Start a project from this example" — a clean working title
+// and discipline per study. Both are real, descriptive labels (no invented
+// research question); the project's question is left for the researcher to
+// write. Kept as a side map so the case-study records stay purely descriptive.
+const SEED: Record<string, { topic: string; field: string }> = {
+  'edmondson-1999': { topic: 'Psychological safety & team learning', field: 'Organizational Behavior' },
+  'hackman-oldham-1976': { topic: 'Job design & work motivation', field: 'Organizational Behavior' },
+  'allen-meyer-1990': { topic: 'Organizational commitment', field: 'Organizational Behavior' },
+  'colquitt-2001': { topic: 'Organizational justice', field: 'Organizational Behavior' },
+  'luthans-2007': { topic: 'Psychological capital at work', field: 'Organizational Behavior' },
+  'rich-2010': { topic: 'Job engagement & performance', field: 'Organizational Behavior' },
+  'tepper-2000': { topic: 'Abusive supervision', field: 'Organizational Behavior' },
+  'grant-2008': { topic: 'Task significance & motivation', field: 'Organizational Behavior' },
+  'judge-bono-2001': { topic: 'Core self-evaluations at work', field: 'Industrial-Organizational Psychology' },
+  'eisenberger-1986': { topic: 'Perceived organizational support', field: 'Organizational Behavior' },
+  'tversky-kahneman-1981': { topic: 'Framing effects in choice', field: 'Judgment & decision making' },
+  'frederick-2005': { topic: 'Cognitive reflection & decisions', field: 'Judgment & decision making' },
+  'mueller-oppenheimer-2014': { topic: 'Note-taking & learning', field: 'Cognitive psychology' },
+  'dunn-2008': { topic: 'Prosocial spending & happiness', field: 'Social psychology' },
+  'kahneman-deaton-2010': { topic: 'Income & well-being', field: 'Behavioral economics' },
+  'norton-2012': { topic: 'Effort & valuation (the IKEA effect)', field: 'Consumer psychology' },
+  'mehl-2010': { topic: 'Conversation quality & well-being', field: 'Social & personality psychology' },
+  'gneezy-rustichini-2000': { topic: 'Incentives & motivation crowding-out', field: 'Behavioral economics' },
+  'milkman-2011': { topic: 'Implementation intentions & behavior', field: 'Behavioral science' },
+  'bryan-2011': { topic: 'Identity framing & behavior', field: 'Social psychology' },
+}
+
+export function seedOf(c: CaseStudy): { topic: string; field: string } {
+  return SEED[c.slug] ?? { topic: c.title, field: '' }
+}
+
+/** A scaffold note seeded onto the new project's first stage — real facts only. */
+export function seedNote(c: CaseStudy): string {
+  return (
+    `Seeded from ${c.authors} (${c.year}), ${c.journal} [doi.org/${c.doi}]. ` +
+    `Theory lens: ${c.theory}. Construct: ${c.construct}. ` +
+    `Reference instrument: ${c.instrument}. ` +
+    `Make this your own — replicate, extend, or adapt — then carry it down the spine.`
+  )
+}
+
 /** APA-ish one-line reference for display. */
 export function apaRef(c: CaseStudy): string {
   return `${c.authors} (${c.year}). ${c.title}. ${c.journal}.`

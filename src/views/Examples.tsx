@@ -7,9 +7,27 @@
 // ============================================================================
 
 import { Icon } from '../components/Icon'
-import { apaRef, CASE_STUDIES, caseStudy, doiUrl, paceOf, type CaseStudy } from '../lib/caseStudies'
+import {
+  apaRef,
+  CASE_STUDIES,
+  caseStudy,
+  doiUrl,
+  paceOf,
+  seedNote,
+  seedOf,
+  type CaseStudy,
+} from '../lib/caseStudies'
 import { navigate } from '../lib/router'
 import { stageDef } from '../lib/stages'
+import { createProject, setStageNotes } from '../lib/store'
+
+/** Seed a real, editable project from a case study and open it. */
+function startFromExample(study: CaseStudy) {
+  const { topic, field } = seedOf(study)
+  const p = createProject(topic, field)
+  const seeded = setStageNotes(p, 'discover', seedNote(study))
+  navigate(`/p/${seeded.id}`)
+}
 
 export function Examples({ slug }: { slug?: string }) {
   const study = slug ? caseStudy(slug) : undefined
@@ -218,8 +236,8 @@ function CaseStudyDetail({ study }: { study: CaseStudy }) {
         <button className="btn btn-ghost" onClick={() => navigate('/examples')}>
           <Icon name="back" size={15} /> All examples
         </button>
-        <button className="btn btn-fill" onClick={() => navigate('/')}>
-          Start your own project <Icon name="arrow" size={15} />
+        <button className="btn btn-fill" onClick={() => startFromExample(study)}>
+          Start a project from this example <Icon name="arrow" size={15} />
         </button>
       </div>
     </div>
