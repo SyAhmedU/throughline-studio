@@ -28,6 +28,9 @@ export interface CorpusPaper {
   oaUrl?: string | null
   constructCodes: string[]
   hasAbstract: boolean
+  /** true = OpenAlex refresh tier (machine-tagged to the same 167 constructs,
+   *  NOT hand-coded — always badged, never silently mixed) */
+  recent?: boolean
 }
 
 export interface ConstructInfo {
@@ -111,6 +114,40 @@ export function getAbstract(id: string): Promise<string> {
     abstractsPromise = fetchJson<Record<string, string>>(`${BASE}/abstracts.json`).catch(() => ({}))
   }
   return abstractsPromise.then((a) => a[id] || '')
+}
+
+// ── ↑ Recent tier — the Research Book's OpenAlex refresh pull ───────────────
+// data/recent.index.json: real 2024→ papers fetched per construct/journal,
+// DOI-deduped against the hand-coded moat, machine-tagged to the same 167
+// construct codes. It is ~42 MB, so it loads only on an explicit one-click
+// opt-in (remembered per browser) — never silently, never blocking the
+// hand-coded corpus.
+
+let recentPromise: Promise<CorpusPaper[]> | null = null
+export function loadRecent(): Promise<CorpusPaper[]> {
+  if (recentPromise) return recentPromise
+  recentPromise = (async () => {
+    const raw = await fetchJson<CorpusPaper[]>(`${BASE}/recent.index.json`)
+    return raw.map((p) => ({ ...p, recent: true as const }))
+  })()
+  return recentPromise
+}
+
+// Recent-tier abstracts are sharded by DOI hash (data/recent.abstracts/<NN>.json);
+// the hash MUST match the Research Book's recentShardOf (merge-refresh.mjs).
+const RECENT_ABS_SHARDS = 16
+function recentShardOf(doi: string): string {
+  let h = 0
+  for (let i = 0; i < doi.length; i++) h = (h * 31 + doi.charCodeAt(i)) >>> 0
+  return String(h % RECENT_ABS_SHARDS).padStart(2, '0')
+}
+const recentAbsCache: Record<string, Promise<Record<string, string>>> = {}
+export function getRecentAbstract(doi: string): Promise<string> {
+  const sh = recentShardOf(doi)
+  if (!recentAbsCache[sh]) {
+    recentAbsCache[sh] = fetchJson<Record<string, string>>(`${BASE}/recent.abstracts/${sh}.json`).catch(() => ({}))
+  }
+  return recentAbsCache[sh].then((m) => m[doi] || '')
 }
 
 // ── ⚡ Live layer — this month's papers, straight from OpenAlex ─────────────
