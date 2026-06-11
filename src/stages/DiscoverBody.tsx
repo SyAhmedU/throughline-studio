@@ -13,10 +13,12 @@ import {
   loadCorpus,
   readingList,
   searchCorpus,
+  searchLive,
   toSaved,
   type Corpus,
   type CorpusFilters,
   type CorpusPaper,
+  type LivePaper,
   type SavedPaper,
 } from '../lib/corpus'
 import { deepLink, stageDef } from '../lib/stages'
@@ -45,6 +47,9 @@ export function DiscoverBody({
   const [limit, setLimit] = useState(PAGE)
   const [open, setOpen] = useState<Record<string, string | 'loading'>>({})
   const [showList, setShowList] = useState(false)
+  const [liveOn, setLiveOn] = useState(false)
+  const [livePapers, setLivePapers] = useState<LivePaper[]>([])
+  const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
 
   useEffect(() => {
     let alive = true
@@ -70,6 +75,38 @@ export function DiscoverBody({
     () => (corpus ? searchCorpus(corpus, filters) : []),
     [corpus, filters],
   )
+
+  // ⚡ live layer — newest OpenAlex works for the current query/construct.
+  // Fetched only when toggled on and there is something to search for.
+  const liveQuery =
+    filters.query.trim().length >= 4
+      ? filters.query.trim()
+      : filters.constructCode && corpus
+        ? corpus.codeToName.get(filters.constructCode) || ''
+        : ''
+  useEffect(() => {
+    if (!liveOn || !liveQuery) {
+      setLivePapers([])
+      setLiveStatus('idle')
+      return
+    }
+    const ctl = new AbortController()
+    setLiveStatus('loading')
+    const t = window.setTimeout(() => {
+      searchLive(liveQuery, ctl.signal)
+        .then((ps) => {
+          setLivePapers(ps)
+          setLiveStatus('ready')
+        })
+        .catch((e) => {
+          if (e?.name !== 'AbortError') setLiveStatus('error')
+        })
+    }, 450)
+    return () => {
+      window.clearTimeout(t)
+      ctl.abort()
+    }
+  }, [liveOn, liveQuery])
 
   const list = readingList(project)
   const inList = useMemo(() => new Set(list.map((p) => p.id)), [list])
@@ -194,7 +231,77 @@ export function DiscoverBody({
           />
           Open access
         </label>
+        <label className="disc-oa" title="Also pull the newest works (last 60 days) live from OpenAlex for this search — real records, machine-matched, verify before citing">
+          <input type="checkbox" checked={liveOn} onChange={(e) => setLiveOn(e.target.checked)} />
+          ⚡ Live
+        </label>
       </div>
+
+      {/* ⚡ live results — clearly separated from the hand-coded corpus */}
+      {liveOn && (
+        <div className="disc-live">
+          {liveStatus === 'loading' && <p className="disc-count">⚡ pulling this month's papers from OpenAlex…</p>}
+          {liveStatus === 'error' && <p className="disc-count">⚡ OpenAlex unavailable right now — corpus results below are unaffected.</p>}
+          {liveStatus === 'idle' && !liveQuery && (
+            <p className="disc-count">⚡ type a search (4+ characters) or pick a construct to pull the newest papers live.</p>
+          )}
+          {liveStatus === 'ready' && (
+            <>
+              <p className="disc-count">
+                ⚡ <strong>{livePapers.length}</strong> just-published (last 60 days, OpenAlex) — machine-matched to “{liveQuery}”, verify before citing
+              </p>
+              {livePapers.map((lp) => {
+                const sid = lp.doi || lp.id
+                const saved = inList.has(sid)
+                const abs = open[lp.id]
+                return (
+                  <article key={lp.id} className="disc-card">
+                    <div className="disc-card-main">
+                      <h3 className="disc-title">
+                        {lp.doi ? (
+                          <a href={`https://doi.org/${lp.doi}`} target="_blank" rel="noopener noreferrer">{lp.title}</a>
+                        ) : (
+                          <a href={lp.id} target="_blank" rel="noopener noreferrer">{lp.title}</a>
+                        )}
+                      </h3>
+                      <p className="disc-meta">
+                        <span>{authorLine(lp.authors)}</span>
+                        {lp.year && <span className="disc-dim"> · {lp.year}</span>}
+                        {lp.journal && <span className="disc-dim"> · {lp.journal}</span>}
+                      </p>
+                      <div className="disc-badges">
+                        <span className="disc-badge disc-badge-live">⚡ live · verify</span>
+                        {lp.openAccess && <span className="disc-badge disc-badge-oa">OA</span>}
+                      </div>
+                      {abs !== undefined && <p className="disc-abstract">{abs}</p>}
+                    </div>
+                    <div className="disc-card-actions">
+                      <button className={`btn btn-fill btn-sm ${saved ? 'is-on' : ''}`} onClick={() => toggleSave(lp)}>
+                        {saved ? (<><Icon name="check" size={14} /> Added</>) : (<><Icon name="plus" size={14} /> Add</>)}
+                      </button>
+                      {lp.abstractText && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() =>
+                            setOpen((o) => {
+                              const next = { ...o }
+                              if (next[lp.id] !== undefined) delete next[lp.id]
+                              else next[lp.id] = lp.abstractText!
+                              return next
+                            })
+                          }
+                        >
+                          {abs !== undefined ? 'Hide' : 'Abstract'}
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                )
+              })}
+            </>
+          )}
+        </div>
+      )}
 
       <p className="disc-count">
         {results.length.toLocaleString()} {results.length === 1 ? 'match' : 'matches'}
