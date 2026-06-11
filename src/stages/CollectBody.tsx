@@ -9,6 +9,7 @@
 
 import { useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { generate } from '../lib/api'
 import { nForCorr, nPerGroup } from '../lib/power'
 import { buildPrereg, fmtLockDate, planValues } from '../lib/prereg'
 import type { SavedScale } from '../lib/scales'
@@ -118,6 +119,53 @@ export function CollectBody({
     )
   }
 
+  // ── ✦ AI plan draft — fills EMPTY plans only, from the study's own facts ──
+  // Grounded on what the researcher already framed (question, hypotheses,
+  // design, instrument, target N); the prompt forbids invented citations or
+  // statistics, and the notice marks the result a draft to verify.
+  const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'done' | 'offline' | 'error'>('idle')
+  const [aiFilled, setAiFilled] = useState<string[]>([])
+
+  async function draftPlansWithAI() {
+    if (aiStatus === 'loading') return
+    setAiStatus('loading')
+    const targetN = form.targetN || (Number.isFinite(suggestedN) ? String(suggestedN) : '')
+    const prompt = [
+      'You are helping a researcher write the three preregistration plans for a quantitative social-science study.',
+      `Research question: ${project.question || '(not framed yet)'}`,
+      frame.hypotheses?.length
+        ? `Hypotheses:\n${frame.hypotheses.filter(Boolean).map((h, i) => `H${i + 1}: ${h}`).join('\n')}`
+        : 'No hypotheses framed yet.',
+      `Design: ${frame.design || 'not chosen yet'}`,
+      scales.length
+        ? `Instrument: ${scales.map((s) => `${s.name}${s.itemCount ? ` (${s.itemCount} items)` : ''}`).join('; ')}`
+        : 'No instrument yet.',
+      targetN ? `Target N: ${targetN}` : 'Target N not set yet.',
+      'Rules: NEVER invent citations, author names, statistics, software versions, or empirical claims. Write concrete, checkable plans in plain prose: samplingPlan = who, how many, how recruited, stopping rule; analysisPlan = the confirmatory test per hypothesis with alpha; exclusions = attention checks, incompletes, outlier rule. Base everything ONLY on the facts above.',
+    ].join('\n\n')
+    const res = await generate(prompt, {
+      schemaHint: '{"samplingPlan": string, "analysisPlan": string, "exclusions": string}',
+      temperature: 0.4,
+    })
+    const d = (res.data && typeof res.data === 'object' ? res.data : null) as Record<string, unknown> | null
+    if (!res.ok || !d) {
+      setAiStatus(res.ok || res.reason === 'error' ? 'error' : 'offline')
+      return
+    }
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+    const filled: string[] = []
+    const patch: Partial<CollectData> = {}
+    for (const key of ['samplingPlan', 'analysisPlan', 'exclusions'] as const) {
+      if (!plans[key].trim() && str(d[key])) {
+        patch[key] = str(d[key])
+        filled.push(key === 'samplingPlan' ? 'sampling plan' : key === 'analysisPlan' ? 'analysis plan' : 'exclusions')
+      }
+    }
+    setAiFilled(filled)
+    if (Object.keys(patch).length) update(patch)
+    setAiStatus('done')
+  }
+
   const ethicsDone = ETHICS_CHECKS.filter((c) => !!form[c.key]).length
   const fielding = form.status === 'Collecting' || form.status === 'Complete'
   const gateMissing = [
@@ -189,7 +237,27 @@ export function CollectBody({
 
       {/* preregistration — locked BEFORE fielding */}
       <section className="bld-section">
-        <h2 className="bld-h">Preregistration — lock it before the first participant</h2>
+        <div className="bld-section-head">
+          <h2 className="bld-h" style={{ margin: 0 }}>Preregistration — lock it before the first participant</h2>
+          {!locked && (
+            <button className="btn btn-ghost btn-sm" onClick={draftPlansWithAI} disabled={aiStatus === 'loading'}>
+              {aiStatus === 'loading' ? 'Drafting…' : '✦ Draft plans with AI'}
+            </button>
+          )}
+        </div>
+        {!locked && aiStatus === 'done' && aiFilled.length > 0 && (
+          <p className="anz-warn">
+            ✦ AI-drafted: {aiFilled.join(', ')}. Verify every line and edit freely before you lock — the prereg is
+            yours, not the model's.
+          </p>
+        )}
+        {!locked && aiStatus === 'done' && aiFilled.length === 0 && (
+          <p className="anz-warn">✦ Nothing to fill — all three plans already have your own text. Clear one first to redraft it.</p>
+        )}
+        {!locked && aiStatus === 'offline' && (
+          <p className="anz-warn">✦ The AI backends are unreachable right now — write the plans by hand, or try again later.</p>
+        )}
+        {!locked && aiStatus === 'error' && <p className="anz-warn">✦ The AI draft failed — try again, or write the plans by hand.</p>}
         {locked ? (
           <>
             <p className="prereg-locked">

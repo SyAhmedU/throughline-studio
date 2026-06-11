@@ -9,6 +9,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { generate } from '../lib/api'
+import { readingList } from '../lib/corpus'
 import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef } from '../lib/stages'
 import { saveProject } from '../lib/store'
@@ -109,6 +111,73 @@ export function FrameBody({
   }
   const results = theories ? searchTheories(theories, tq).slice(0, 12) : []
 
+  // ── ✦ AI draft — fills EMPTY fields only, grounded on the reading list ────
+  // The draft is a starting point to verify and edit, never a source: the
+  // prompt forbids invented citations/statistics/findings (no-fab), and the
+  // notice below the section says exactly which fields the model touched.
+  const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'done' | 'offline' | 'error'>('idle')
+  const [aiFilled, setAiFilled] = useState<string[]>([])
+
+  async function draftWithAI() {
+    if (aiStatus === 'loading') return
+    setAiStatus('loading')
+    const f = formRef.current
+    const papers = readingList(projRef.current).slice(0, 8)
+    const grounding = papers.length
+      ? `Reading list the researcher has gathered (titles only — do NOT invent details about these papers):\n${papers
+          .map((p) => `- ${p.title}${p.year ? ` (${p.year})` : ''}`)
+          .join('\n')}`
+      : 'No reading list yet.'
+    const prompt = [
+      `You are helping a researcher frame a quantitative social-science study. Draft framing fields as JSON.`,
+      `Project title: ${projRef.current.title || '(untitled)'}`,
+      `Field: ${projRef.current.field || 'Organizational Behavior / management'}`,
+      f.question.trim() ? `Research question so far (keep its intent): ${f.question.trim()}` : 'No research question yet.',
+      grounding,
+      `Rules: NEVER invent citations, author names, statistics, effect sizes, or empirical findings — propose constructs and directional predictions only, phrased as hypotheses to be tested, not facts. Hypotheses must each be ONE directional, testable sentence. "design" MUST be exactly one of: ${DESIGNS.join(' | ')}.`,
+    ].join('\n\n')
+    const res = await generate(prompt, {
+      schemaHint:
+        '{"question": string, "gap": string, "hypotheses": string[] (max 4, one directional sentence each), "design": string, "iv": string, "dv": string, "mediators": string, "moderators": string}',
+      temperature: 0.5,
+    })
+    const d = (res.data && typeof res.data === 'object' ? res.data : null) as Record<string, unknown> | null
+    if (!res.ok || !d) {
+      setAiStatus(res.ok || res.reason === 'error' ? 'error' : 'offline')
+      return
+    }
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+    const filled: string[] = []
+    const patch: Partial<typeof form> = {}
+    const fillText = (key: 'question' | 'gap' | 'iv' | 'dv' | 'mediators' | 'moderators') => {
+      if (!f[key].trim() && str(d[key])) {
+        patch[key] = str(d[key])
+        filled.push(key)
+      }
+    }
+    fillText('question')
+    fillText('gap')
+    fillText('iv')
+    fillText('dv')
+    fillText('mediators')
+    fillText('moderators')
+    if (!f.design && DESIGNS.includes(str(d.design))) {
+      patch.design = str(d.design)
+      filled.push('design')
+    }
+    const hasHyps = f.hypotheses.some((h) => h.trim())
+    if (!hasHyps && Array.isArray(d.hypotheses)) {
+      const hyps = d.hypotheses.map(str).filter(Boolean).slice(0, 4)
+      if (hyps.length) {
+        patch.hypotheses = hyps
+        filled.push('hypotheses')
+      }
+    }
+    setAiFilled(filled)
+    if (Object.keys(patch).length) set(patch)
+    setAiStatus('done')
+  }
+
   const tools = stageDef('frame').tools
   const lock = preregLock(project)
 
@@ -124,7 +193,29 @@ export function FrameBody({
 
       {/* question + gap */}
       <section className="bld-section">
-        <h2 className="bld-h">The study in two sentences</h2>
+        <div className="bld-section-head">
+          <h2 className="bld-h" style={{ margin: 0 }}>The study in two sentences</h2>
+          {!lock && (
+            <button className="btn btn-ghost btn-sm" onClick={draftWithAI} disabled={aiStatus === 'loading'}>
+              {aiStatus === 'loading' ? 'Drafting…' : '✦ Draft with AI'}
+            </button>
+          )}
+        </div>
+        {aiStatus === 'done' && aiFilled.length > 0 && (
+          <p className="anz-warn">
+            ✦ AI-drafted: {aiFilled.join(', ')}. Verify every claim and edit freely — nothing is grounded until you
+            ground it.
+          </p>
+        )}
+        {aiStatus === 'done' && aiFilled.length === 0 && (
+          <p className="anz-warn">✦ Nothing to fill — every field already has your own text. Clear a field first to redraft it.</p>
+        )}
+        {aiStatus === 'offline' && (
+          <p className="anz-warn">✦ The AI backends are unreachable right now — frame it by hand, or try again later.</p>
+        )}
+        {aiStatus === 'error' && (
+          <p className="anz-warn">✦ The AI draft failed — try again, or frame it by hand.</p>
+        )}
         <label className="bld-label" htmlFor="fr-q">Research question</label>
         <textarea
           id="fr-q"
@@ -143,6 +234,16 @@ export function FrameBody({
           placeholder="What's missing in what's already known? Why does this study need to exist?"
           rows={2}
         />
+        <p className="anz-fineprint" style={{ marginTop: 6 }}>
+          Not sure what the gap is?{' '}
+          <a
+            href={`https://syahmedu.github.io/journaltime/?topic=${encodeURIComponent(topic)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Find the gap with Research Compass ↗
+          </a>
+        </p>
       </section>
 
       {/* hypotheses */}

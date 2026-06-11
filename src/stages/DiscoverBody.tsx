@@ -6,11 +6,13 @@
 // Falls back gracefully (open-in-full-tool links) if the corpus can't load.
 // ============================================================================
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import {
   getAbstract,
+  getRecentAbstract,
   loadCorpus,
+  loadRecent,
   readingList,
   searchCorpus,
   searchLive,
@@ -50,6 +52,47 @@ export function DiscoverBody({
   const [liveOn, setLiveOn] = useState(false)
   const [livePapers, setLivePapers] = useState<LivePaper[]>([])
   const [liveStatus, setLiveStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [recentOn, setRecentOn] = useState(false)
+  const [recentPapers, setRecentPapers] = useState<CorpusPaper[]>([])
+  const [recentStatus, setRecentStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+
+  // ↑ recent tier — explicit opt-in (it's a ~42 MB one-time fetch), remembered
+  // per browser in localStorage.tls_recent so it re-loads on the next visit.
+  const recentStarted = useRef(false)
+  function startRecentLoad() {
+    if (recentStarted.current) return
+    recentStarted.current = true
+    setRecentStatus('loading')
+    loadRecent()
+      .then((ps) => {
+        setRecentPapers(ps)
+        setRecentStatus('ready')
+      })
+      .catch(() => {
+        recentStarted.current = false // allow a retry on re-check
+        setRecentStatus('error')
+      })
+  }
+  function toggleRecent(checked: boolean) {
+    setRecentOn(checked)
+    try {
+      if (checked) localStorage.setItem('tls_recent', '1')
+      else localStorage.removeItem('tls_recent')
+    } catch {
+      /* storage unavailable — the toggle still works for this visit */
+    }
+    if (checked) startRecentLoad()
+  }
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('tls_recent') === '1') {
+        setRecentOn(true)
+        startRecentLoad()
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   useEffect(() => {
     let alive = true
@@ -71,10 +114,14 @@ export function DiscoverBody({
     setLimit(PAGE)
   }, [filters.query, filters.constructCode, filters.oaOnly, filters.sort])
 
-  const results = useMemo(
-    () => (corpus ? searchCorpus(corpus, filters) : []),
-    [corpus, filters],
-  )
+  // hand-coded corpus + (when opted in) the recent tier, searched as one pool —
+  // recent records stay visibly badged on every card, never silently mixed.
+  const recentActive = recentOn && recentStatus === 'ready' && recentPapers.length > 0
+  const results = useMemo(() => {
+    if (!corpus) return []
+    const pool = recentActive ? { ...corpus, papers: [...corpus.papers, ...recentPapers] } : corpus
+    return searchCorpus(pool, filters)
+  }, [corpus, filters, recentActive, recentPapers])
 
   // ⚡ live layer — newest OpenAlex works for the current query/construct.
   // Fetched only when toggled on and there is something to search for.
@@ -135,7 +182,9 @@ export function DiscoverBody({
       return
     }
     setOpen((o) => ({ ...o, [id]: 'loading' }))
-    getAbstract(id).then((text) =>
+    // recent-tier abstracts live in DOI-hashed shards; hand-coded ones in one file
+    const fetchText = cp.recent ? getRecentAbstract(cp.doi) : getAbstract(id)
+    fetchText.then((text) =>
       setOpen((o) => ({ ...o, [id]: text || '— No abstract on record for this paper.' })),
     )
   }
@@ -158,11 +207,17 @@ export function DiscoverBody({
   return (
     <div className="disc">
       <p className="disc-lead">
-        Searching <strong>{corpus.papers.length.toLocaleString()}</strong> hand-coded papers across{' '}
-        <strong>{corpus.constructs.length}</strong> constructs — Syed's Research Book corpus.{' '}
+        Searching <strong>{corpus.papers.length.toLocaleString()}</strong> hand-coded papers
+        {recentActive && (
+          <>
+            {' '}+ <strong>{recentPapers.length.toLocaleString()}</strong> recent (OpenAlex 2024→, machine-tagged to
+            the same {corpus.constructs.length} constructs)
+          </>
+        )}{' '}
+        across <strong>{corpus.constructs.length}</strong> constructs — Syed's Research Book corpus.{' '}
         <span className="disc-dim">
           Coverage is OB / management, coded by one researcher — a gap here may just be the corpus's edge. For other
-          fields, or to check recall, use the ⚡ live OpenAlex layer or the full tools below.
+          fields, or to check recall, use the ↑ recent tier, the ⚡ live OpenAlex layer, or the full tools below.
         </span>
       </p>
 
@@ -239,7 +294,18 @@ export function DiscoverBody({
           <input type="checkbox" checked={liveOn} onChange={(e) => setLiveOn(e.target.checked)} />
           ⚡ Live
         </label>
+        <label className="disc-oa" title="Also search the Research Book's recent tier — real OpenAlex papers (2024→) machine-tagged to the same 167 constructs. One-time ~42 MB load, remembered on this browser.">
+          <input type="checkbox" checked={recentOn} onChange={(e) => toggleRecent(e.target.checked)} />
+          ↑ Recent
+        </label>
       </div>
+
+      {recentOn && recentStatus === 'loading' && (
+        <p className="disc-count">↑ loading the recent tier — one-time ~42 MB, this can take a minute…</p>
+      )}
+      {recentOn && recentStatus === 'error' && (
+        <p className="disc-count">↑ couldn't load the recent tier — hand-coded results below are unaffected.</p>
+      )}
 
       {/* ⚡ live results — clearly separated from the hand-coded corpus */}
       {liveOn && (
@@ -338,6 +404,7 @@ export function DiscoverBody({
                   {cp.journal && <span className="disc-dim"> · {cp.journal}</span>}
                 </p>
                 <div className="disc-badges">
+                  {cp.recent && <span className="disc-badge disc-badge-recent">↑ recent · machine-tagged</span>}
                   {typeof cp.scopusPercentile === 'number' && (
                     <span className="disc-badge disc-badge-p">Scopus p{cp.scopusPercentile}</span>
                   )}

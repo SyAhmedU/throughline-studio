@@ -1387,6 +1387,8 @@
 }
 .disc-badge-p { color: var(--accent-2); border-color: transparent; background: var(--grad-soft); }
 .disc-badge-oa { color: #1f9d6b; border-color: rgba(31, 157, 107, 0.4); background: rgba(31, 157, 107, 0.1); }
+.disc-badge-live { color: #c98a1e; border-color: rgba(201, 138, 30, 0.4); background: rgba(201, 138, 30, 0.1); }
+.disc-badge-recent { color: #3a7bd5; border-color: rgba(58, 123, 213, 0.4); background: rgba(58, 123, 213, 0.1); }
 .disc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .disc-chip {
   font-size: 12px;

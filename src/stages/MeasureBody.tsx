@@ -31,6 +31,66 @@ function instrumentOf(p: Project): SavedScale[] {
   return Array.isArray(d?.scales) ? d!.scales! : []
 }
 
+// ── Suggested scales — deterministic, no AI ─────────────────────────────────
+// Reads the constructs the researcher framed (IV/DV/mediators/moderators) and
+// token-scores them against the catalogue. searchScales is every-term-AND
+// (too strict for multi-word construct phrases), so this is a weighted scorer:
+// construct-field hits count most, then name/abbreviation, then tags. A match
+// is a navigational hint, never a verdict — the card says so.
+
+const STOP = new Set(['the', 'and', 'for', 'with', 'employee', 'team', 'work', 'level', 'perceived'])
+
+/** "psychological safety, engagement & burnout" → ['psychological safety', 'engagement', 'burnout'] */
+export function framedConstructs(frame: { iv?: string; dv?: string; mediators?: string; moderators?: string }): string[] {
+  const out: string[] = []
+  for (const raw of [frame.iv, frame.dv, frame.mediators, frame.moderators]) {
+    for (const part of (raw || '').split(/,|;|&|\band\b|\//i)) {
+      const c = part.trim().replace(/\s+/g, ' ')
+      if (c.length >= 3 && !out.some((x) => x.toLowerCase() === c.toLowerCase())) out.push(c)
+    }
+  }
+  return out
+}
+
+function tokensOf(phrase: string): string[] {
+  return phrase
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .split(/[\s-]+/)
+    .filter((t) => t.length >= 3 && !STOP.has(t))
+}
+
+function scoreScale(s: Scale, tokens: string[]): number {
+  if (!tokens.length) return 0
+  const construct = (s.construct || '').toLowerCase()
+  const name = s.name.toLowerCase()
+  const abbr = (s.abbreviation || '').toLowerCase()
+  const tags = (s.tags || []).join(' ').toLowerCase()
+  let score = 0
+  for (const t of tokens) {
+    if (construct.includes(t)) score += 3
+    else if (name.includes(t) || abbr === t) score += 2
+    else if (tags.includes(t)) score += 1
+  }
+  return score
+}
+
+export function suggestScales(all: Scale[], constructs: string[]): { construct: string; scales: Scale[] }[] {
+  const out: { construct: string; scales: Scale[] }[] = []
+  for (const c of constructs) {
+    const tokens = tokensOf(c)
+    if (!tokens.length) continue
+    const scored = all
+      .map((s) => ({ s, score: scoreScale(s, tokens) }))
+      .filter((x) => x.score >= 2) // a lone tag hit isn't a suggestion
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((x) => x.s)
+    if (scored.length) out.push({ construct: c, scales: scored })
+  }
+  return out
+}
+
 /** Verbatim item wording for one scale (real text from ScaleScope's catalogue). */
 function ItemList({ set }: { set: NonNullable<ScaleItemsMap[number]> }) {
   return (
@@ -87,6 +147,11 @@ export function MeasureBody({
   useEffect(() => setLimit(PAGE), [query, domain])
 
   const results = useMemo(() => (all ? searchScales(all, query, domain) : []), [all, query, domain])
+  const frame = (project.stages.frame?.data || {}) as { iv?: string; dv?: string; mediators?: string; moderators?: string }
+  const suggestions = useMemo(
+    () => (all ? suggestScales(all, framedConstructs(frame)) : []),
+    [all, frame.iv, frame.dv, frame.mediators, frame.moderators],
+  )
   const instr = instrumentOf(project)
   const inSet = useMemo(() => new Set(instr.map((s) => s.id)), [instr])
   const totalItems = instr.reduce((a, s) => a + (s.itemCount || 0), 0)
@@ -166,6 +231,46 @@ export function MeasureBody({
         </div>
       ) : (
         <>
+          {suggestions.length > 0 && (
+            <section className="bld-section">
+              <h2 className="bld-h">Suggested from your framed constructs</h2>
+              <p className="anz-fineprint" style={{ marginTop: 0 }}>
+                Deterministic token match against the catalogue — no AI. Judge fit yourself: read the items and the
+                validation evidence before you commit.
+              </p>
+              {suggestions.map(({ construct, scales }) => (
+                <div key={construct} style={{ marginBottom: 10 }}>
+                  <span className="bld-label" style={{ margin: '0 0 6px' }}>{construct}</span>
+                  <ul className="ms-chosen">
+                    {scales.map((sc) => {
+                      const added = inSet.has(sc.id)
+                      return (
+                        <li key={sc.id}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <span className="ms-chosen-name">
+                              {sc.name} {sc.abbreviation && <span className="disc-dim">({sc.abbreviation})</span>}
+                            </span>
+                            <span className="ms-chosen-meta">
+                              {sc.construct}
+                              {sc.itemCount != null ? ` · ${sc.itemCount} items` : ''}
+                              {sc.reliability?.cronbach_alpha ? ` · α ${sc.reliability.cronbach_alpha}` : ''}
+                              {' · token match — judge fit yourself'}
+                            </span>
+                          </div>
+                          <div className="ms-chosen-actions">
+                            <button className={`btn btn-fill btn-sm ${added ? 'is-on' : ''}`} onClick={() => toggle(sc)}>
+                              {added ? <><Icon name="check" size={14} /> Added</> : <><Icon name="plus" size={14} /> Add</>}
+                            </button>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </section>
+          )}
+
           <div className="disc-controls">
             <div className="disc-search">
               <Icon name="measure" size={16} />

@@ -130,6 +130,9 @@ export function loadRecent(): Promise<CorpusPaper[]> {
     const raw = await fetchJson<CorpusPaper[]>(`${BASE}/recent.index.json`)
     return raw.map((p) => ({ ...p, recent: true as const }))
   })()
+  recentPromise.catch(() => {
+    recentPromise = null // don't cache a failed ~42 MB fetch — let the user retry
+  })
   return recentPromise
 }
 
@@ -225,6 +228,8 @@ export interface SavedPaper {
   addedAt: number
   /** true when the record came from the live OpenAlex layer (verify before citing) */
   live?: boolean
+  /** true when the record came from the ↑ recent tier (machine-tagged, verify before citing) */
+  recent?: boolean
 }
 
 export function toSaved(cp: CorpusPaper, codeToName: Map<string, string>): SavedPaper {
@@ -241,6 +246,7 @@ export function toSaved(cp: CorpusPaper, codeToName: Map<string, string>): Saved
     oaUrl: cp.oaUrl,
     addedAt: Date.now(),
     live: (cp as LivePaper).live || undefined,
+    recent: cp.recent || undefined,
   }
 }
 
