@@ -88,7 +88,9 @@ export function CollectBody({
   ].filter(Boolean)
 
   const suggestedN = useMemo(() => {
-    const e = Number(form.effectSize)
+    // the inputs display defaults (d .50 / r .30) before first edit — compute
+    // from the same values the researcher actually sees
+    const e = Number(form.effectSize ?? (effectKind === 'r' ? '0.30' : '0.50'))
     const a = Number(form.alpha) || 0.05
     const pw = Number(form.power) || 0.8
     if (!Number.isFinite(e) || e <= 0) return NaN
