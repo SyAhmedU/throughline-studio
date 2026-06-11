@@ -31,5 +31,35 @@
     window.addEventListener('resize', upd, { passive: true })
     upd()
   }
+
+  // Calm scroll-reveal: elements marked data-reveal fade-rise once when they
+  // enter the viewport. React renders async, so a MutationObserver keeps new
+  // nodes covered. (Styles live in app.css; no-op under reduced motion.)
+  {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-revealed')
+            io.unobserve(e.target)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    )
+    const scan = () => {
+      document.querySelectorAll('[data-reveal]:not(.is-revealed):not(.is-watched)').forEach((el) => {
+        el.classList.add('is-watched')
+        io.observe(el)
+      })
+    }
+    const mo = new MutationObserver(scan)
+    const arm = () => {
+      mo.observe(document.body, { childList: true, subtree: true })
+      scan()
+    }
+    if (document.body) arm()
+    else window.addEventListener('DOMContentLoaded', arm)
+  }
 })()
 export {}

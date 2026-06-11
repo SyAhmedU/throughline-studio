@@ -29,7 +29,16 @@
   background: var(--bar-bg);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border-bottom: 1px solid var(--line);
+}
+/* the brand gradient as a hairline — the thread passes under everything */
+.bar::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--warm-a) 16%, var(--warm-b) 50%, var(--warm-c) 84%, transparent);
+  opacity: .38;
+  pointer-events: none;
 }
 .bar-spacer { flex: 1; }
 .bar-logo {
@@ -329,12 +338,26 @@
 .hero-title {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: clamp(40px, 7vw, 74px);
-  line-height: 1.03;
-  letter-spacing: -0.022em;
+  font-size: clamp(42px, 7.6vw, 88px);
+  line-height: 1.02;
+  letter-spacing: -0.024em;
   margin: 0 0 18px;
 }
-.hero-title .grad-text { font-style: italic; font-weight: 500; padding-right: .06em; }
+/* the A→Z gets Fraunces' wonk character + a slow ambient drift along the gradient */
+.hero-title .grad-text {
+  font-style: italic;
+  font-weight: 500;
+  padding-right: .06em;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  background-size: 220% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-title .grad-text { animation: grad-drift 14s ease-in-out infinite alternate; }
+}
+@keyframes grad-drift {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
 .hero-sub {
   max-width: 620px;
   margin: 0 auto 30px;
@@ -445,6 +468,46 @@
 }
 .empty-line { font-family: var(--serif); font-size: 20px; margin: 0 0 6px; }
 .empty-sub { color: var(--ink-2); margin: 0 0 20px; }
+/* the invitation: an unwalked thread, A to Z */
+.empty-thread {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 420px;
+  margin: 0 auto 24px;
+}
+.empty-thread::before {
+  content: '';
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
+  opacity: .28;
+}
+.empty-thread-cap {
+  position: relative;
+  z-index: 1;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 15px;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  color: var(--ink-mute);
+  background: var(--surface);
+  padding: 0 5px;
+}
+.empty-thread-node {
+  position: relative;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--sc, var(--warm-b));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--sc, var(--warm-b)) 50%, transparent);
+}
 
 .project-grid {
   display: grid;
@@ -496,18 +559,25 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.project-progress {
-  height: 5px;
+/* the project's own mini-spine: seven hue segments, one per stage */
+.project-spine { display: flex; gap: 4px; margin: 16px 0 10px; }
+.project-spine-seg {
+  flex: 1;
+  height: 6px;
   border-radius: var(--r-pill);
-  background: var(--surface-2);
-  margin: 16px 0 10px;
-  overflow: hidden;
+  background: color-mix(in srgb, var(--sc, var(--line)) 20%, var(--surface-2));
+  transition: background 0.3s var(--ease);
 }
-.project-progress-fill {
-  height: 100%;
-  border-radius: var(--r-pill);
-  background: var(--grad);
-  transition: width 0.4s var(--ease);
+.project-spine-seg.is-done {
+  background: var(--sc, var(--accent));
+  box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--sc, var(--accent)) 60%, transparent);
+}
+.project-spine-seg.is-active {
+  background: color-mix(in srgb, var(--sc, var(--accent)) 55%, var(--surface-2));
+}
+.project-spine-seg.is-here {
+  outline: 1.5px solid var(--sc, var(--accent));
+  outline-offset: 1.5px;
 }
 .project-card-foot {
   display: flex;
@@ -524,15 +594,112 @@
   font-weight: 600;
 }
 
-/* ── Hub: stages showcase ──────────────────────────────────────────────── */
-.stages-show { padding: 48px 0 8px; }
+/* ── Hub: stages showcase — the literal throughline ─────────────────────
+   A centre gradient thread with the seven stages stationed along it,
+   alternating sides — the suite's signature, walked vertically. */
+.stages-show { padding: 48px 0 8px; text-align: center; }
+.stages-show .section-sub { margin-left: auto; margin-right: auto; }
 .stages-rail {
   list-style: none;
-  margin: 0;
-  padding: 0;
+  margin: 0 auto;
+  padding: 30px 0 10px;
+  position: relative;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  text-align: left;
+}
+.stages-thread,
+.stages-thread-fill {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
+  pointer-events: none;
+}
+.stages-thread { opacity: .2; }
+.stages-thread-fill { opacity: 0; }
+/* scroll-driven fill — the thread is drawn as you walk the section
+   (progressive enhancement; browsers without scroll timelines keep the calm static thread) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .stages-thread-fill {
+      opacity: .95;
+      box-shadow: 0 0 14px rgba(241, 69, 117, .35);
+      transform-origin: top center;
+      animation: thread-grow linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 72%;
+    }
+  }
+}
+@keyframes thread-grow {
+  from { transform: translateX(-50%) scaleY(0); }
+  to { transform: translateX(-50%) scaleY(1); }
+}
+.stages-cap {
+  position: relative;
+  z-index: 1;
+  align-self: center;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 16px;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--shadow-sm);
+}
+.stage-stop { position: relative; width: calc(50% - 46px); }
+.stage-stop:nth-of-type(odd) { align-self: flex-start; }
+.stage-stop:nth-of-type(even) { align-self: flex-end; }
+/* the station node, sitting on the thread in the stage's own hue */
+.stage-stop-node {
+  position: absolute;
+  top: 24px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--sc, var(--warm-b));
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--sc, var(--warm-b)) 16%, transparent),
+    0 0 14px color-mix(in srgb, var(--sc, var(--warm-b)) 55%, transparent);
+  z-index: 1;
+}
+.stage-stop:nth-of-type(odd) .stage-stop-node { right: -52.5px; }
+.stage-stop:nth-of-type(even) .stage-stop-node { left: -52.5px; }
+/* connector from card to node */
+.stage-stop::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  width: 40px;
+  height: 1.5px;
+  background: color-mix(in srgb, var(--sc, var(--warm-b)) 40%, transparent);
+}
+.stage-stop:nth-of-type(odd)::before { right: -42px; }
+.stage-stop:nth-of-type(even)::before { left: -42px; }
+/* narrow: the thread runs down the left edge, every station on one side */
+@media (max-width: 720px) {
+  .stages-rail { max-width: none; gap: 22px; }
+  .stages-thread,
+  .stages-thread-fill { left: 9px; }
+  .stage-stop:nth-of-type(odd),
+  .stage-stop:nth-of-type(even) { width: auto; align-self: stretch; margin-left: 32px; }
+  .stage-stop:nth-of-type(odd) .stage-stop-node,
+  .stage-stop:nth-of-type(even) .stage-stop-node { left: -29.5px; right: auto; }
+  .stage-stop:nth-of-type(odd)::before,
+  .stage-stop:nth-of-type(even)::before { left: -23px; right: auto; width: 23px; }
+  .stages-cap { align-self: flex-start; margin-left: -9px; }
 }
 .stage-chip {
   background: var(--surface);
@@ -575,6 +742,13 @@
   margin: 0 0 12px;
 }
 .stage-chip-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.stage-chip-carry {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--sc, var(--ink-mute));
+  margin: 12px 0 0;
+  opacity: .9;
+}
 .tool-tag {
   font-size: 11.5px;
   font-weight: 600;
@@ -728,7 +902,9 @@
   padding: 0;
   position: relative;
 }
-/* the continuous thread — carries the brand gradient A→Z */
+/* the continuous thread — carries the brand gradient A→Z. The faint full
+   line is the journey; the bright overlay fills to the furthest completed
+   stage (--spine-fill, set inline by Spine.tsx) — progress made visible. */
 .spine-list::before {
   content: '';
   position: absolute;
@@ -737,7 +913,19 @@
   bottom: 14px;
   width: 2px;
   background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
-  opacity: .35;
+  opacity: .18;
+}
+.spine-list::after {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
+  box-shadow: 0 0 10px rgba(241, 69, 117, .35);
+  clip-path: inset(0 0 calc(100% - var(--spine-fill, 0%)) 0);
+  transition: clip-path .6s var(--ease);
 }
 .spine-item { position: relative; }
 .spine-node-btn {
@@ -1436,7 +1624,8 @@
   }
   .spine-cap { display: none; }
   .spine-list { display: flex; gap: 6px; }
-  .spine-list::before { display: none; }
+  .spine-list::before,
+  .spine-list::after { display: none; }
   .spine-meta { display: none; }
   .spine-node-btn { flex-direction: column; padding: 6px; }
   .stage-grid { grid-template-columns: 1fr; }
@@ -1600,13 +1789,13 @@
    thread is structural: hub rail, workspace spine, and stage headers all
    speak the same position in the journey.
    ════════════════════════════════════════════════════════════════════════ */
-.stages-rail li:nth-child(1), .spine-item:nth-child(1), .stage[data-stage-n='1'] { --sc: #FF9656; }
-.stages-rail li:nth-child(2), .spine-item:nth-child(2), .stage[data-stage-n='2'] { --sc: #FA7E5F; }
-.stages-rail li:nth-child(3), .spine-item:nth-child(3), .stage[data-stage-n='3'] { --sc: #F66569; }
-.stages-rail li:nth-child(4), .spine-item:nth-child(4), .stage[data-stage-n='4'] { --sc: #F24C72; }
-.stages-rail li:nth-child(5), .spine-item:nth-child(5), .stage[data-stage-n='5'] { --sc: #D85096; }
-.stages-rail li:nth-child(6), .spine-item:nth-child(6), .stage[data-stage-n='6'] { --sc: #B560C5; }
-.stages-rail li:nth-child(7), .spine-item:nth-child(7), .stage[data-stage-n='7'] { --sc: #9270F4; }
+.stages-rail li:nth-of-type(1), .spine-item:nth-of-type(1), .project-spine-seg:nth-of-type(1), .empty-thread-node:nth-of-type(1), .stage[data-stage-n='1'] { --sc: #FF9656; }
+.stages-rail li:nth-of-type(2), .spine-item:nth-of-type(2), .project-spine-seg:nth-of-type(2), .empty-thread-node:nth-of-type(2), .stage[data-stage-n='2'] { --sc: #FA7E5F; }
+.stages-rail li:nth-of-type(3), .spine-item:nth-of-type(3), .project-spine-seg:nth-of-type(3), .empty-thread-node:nth-of-type(3), .stage[data-stage-n='3'] { --sc: #F66569; }
+.stages-rail li:nth-of-type(4), .spine-item:nth-of-type(4), .project-spine-seg:nth-of-type(4), .empty-thread-node:nth-of-type(4), .stage[data-stage-n='4'] { --sc: #F24C72; }
+.stages-rail li:nth-of-type(5), .spine-item:nth-of-type(5), .project-spine-seg:nth-of-type(5), .empty-thread-node:nth-of-type(5), .stage[data-stage-n='5'] { --sc: #D85096; }
+.stages-rail li:nth-of-type(6), .spine-item:nth-of-type(6), .project-spine-seg:nth-of-type(6), .empty-thread-node:nth-of-type(6), .stage[data-stage-n='6'] { --sc: #B560C5; }
+.stages-rail li:nth-of-type(7), .spine-item:nth-of-type(7), .project-spine-seg:nth-of-type(7), .empty-thread-node:nth-of-type(7), .stage[data-stage-n='7'] { --sc: #9270F4; }
 
 /* ── Hub rail: hue-tinted chips with a faint serif numeral watermark ── */
 .stage-chip { position: relative; overflow: hidden; }
@@ -1662,13 +1851,24 @@
 .stage[data-stage-n] .tool-card.is-primary { border-image: none; border-left: 3px solid var(--sc); }
 .stage[data-stage-n] .side-carry svg { color: var(--sc); }
 
-/* ── Project cards: progress reads as seven stage segments ── */
-.project-progress { position: relative; }
-.project-progress::after {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: repeating-linear-gradient(90deg,
-    transparent 0, transparent calc(100% / 7 - 2px),
-    var(--surface) calc(100% / 7 - 2px), var(--surface) calc(100% / 7));
+/* ── Stage workspace: a quiet aurora in the stage's own hue ── */
+.stage { position: relative; }
+.stage::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px; left: -30px;
+  height: 250px;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: var(--r-lg);
+  background: radial-gradient(70% 100% at 82% 0%,
+    color-mix(in srgb, var(--sc, var(--accent)) 9%, transparent), transparent 72%);
+}
+
+/* ── Calm scroll-reveal (armed by juice.ts; safe if JS never arms it) ── */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] { transition: opacity .6s var(--ease), transform .6s var(--ease); }
+  [data-reveal].is-watched:not(.is-revealed) { opacity: 0; transform: translateY(18px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

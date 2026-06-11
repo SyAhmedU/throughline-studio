@@ -4,6 +4,7 @@
 // product's signature: the single line that runs the whole way through.
 // ============================================================================
 
+import type { CSSProperties } from 'react'
 import { STAGES } from '../lib/stages'
 import type { Project, StageId } from '../lib/types'
 import { Icon } from './Icon'
@@ -17,12 +18,19 @@ export function Spine({
   activeStage: StageId
   onPick: (id: StageId) => void
 }) {
+  // the thread fills down to the furthest completed stage — progress made visible
+  const lastDone = STAGES.reduce(
+    (acc, s, i) => (project.stages[s.id]?.status === 'done' ? i : acc),
+    -1,
+  )
+  const fill = lastDone < 0 ? 0 : ((lastDone + 0.5) / STAGES.length) * 100
+
   return (
     <nav className="spine" aria-label="Research stages">
       <div className="spine-cap spine-cap-a" aria-hidden="true">
         A
       </div>
-      <ol className="spine-list">
+      <ol className="spine-list" style={{ '--spine-fill': `${fill}%` } as CSSProperties}>
         {STAGES.map((s) => {
           const st = project.stages[s.id]?.status ?? 'todo'
           const isActive = s.id === activeStage

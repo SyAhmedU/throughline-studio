@@ -98,8 +98,15 @@ export function Hub() {
 
         {projects.length === 0 ? (
           <div className="empty">
-            <p className="empty-line">No projects yet.</p>
-            <p className="empty-sub">Start one and walk it from discovery to publication.</p>
+            <div className="empty-thread" aria-hidden="true">
+              <b className="empty-thread-cap">A</b>
+              {STAGES.map((s) => (
+                <span className="empty-thread-node" key={s.id} title={s.title} />
+              ))}
+              <b className="empty-thread-cap">Z</b>
+            </div>
+            <p className="empty-line">Your throughline starts here.</p>
+            <p className="empty-sub">Start a project and walk it from discovery to publication.</p>
             <button className="btn btn-fill" onClick={() => setShowNew(true)}>
               <Icon name="plus" size={16} /> Start your first project
             </button>
@@ -123,7 +130,7 @@ export function Hub() {
         )}
       </section>
 
-      {/* ── The seven stages ──────────────────────────────────────── */}
+      {/* ── The seven stages — the literal throughline ────────────── */}
       <section className="stages-show" id="stages">
         <h2 className="section-h2">The throughline</h2>
         <p className="section-sub">
@@ -131,25 +138,33 @@ export function Hub() {
           travels with you.
         </p>
         <ol className="stages-rail">
+          <span className="stages-thread" aria-hidden="true" />
+          <span className="stages-thread-fill" aria-hidden="true" />
+          <span className="stages-cap stages-cap-a" aria-hidden="true">A</span>
           {STAGES.map((s) => (
-            <li className="stage-chip" key={s.id} data-n={s.n}>
-              <div className="stage-chip-top">
-                <span className="stage-chip-icon">
-                  <Icon name={s.id} size={18} />
-                </span>
-                <span className="stage-chip-n">{String(s.n).padStart(2, '0')}</span>
-              </div>
-              <h3 className="stage-chip-title">{s.title}</h3>
-              <p className="stage-chip-brief">{s.brief}</p>
-              <div className="stage-chip-tools">
-                {s.tools.map((t) => (
-                  <span key={t.name} className="tool-tag">
-                    {t.name}
+            <li className="stage-stop" key={s.id} data-reveal>
+              <span className="stage-stop-node" aria-hidden="true" />
+              <div className="stage-chip" data-n={s.n}>
+                <div className="stage-chip-top">
+                  <span className="stage-chip-icon">
+                    <Icon name={s.id} size={18} />
                   </span>
-                ))}
+                  <span className="stage-chip-n">{String(s.n).padStart(2, '0')}</span>
+                </div>
+                <h3 className="stage-chip-title">{s.title}</h3>
+                <p className="stage-chip-brief">{s.brief}</p>
+                <div className="stage-chip-tools">
+                  {s.tools.map((t) => (
+                    <span key={t.name} className="tool-tag">
+                      {t.name}
+                    </span>
+                  ))}
+                </div>
+                <p className="stage-chip-carry">→ carries {s.carries}</p>
               </div>
             </li>
           ))}
+          <span className="stages-cap stages-cap-z" aria-hidden="true">Z</span>
         </ol>
         <div className="stages-cta">
           <a
@@ -214,8 +229,19 @@ function ProjectCard({
       </div>
       {project.field && <p className="project-card-field">{project.field}</p>}
       {project.question && <p className="project-card-q">{project.question}</p>}
-      <div className="project-progress" aria-label={`${pct}% complete`}>
-        <div className="project-progress-fill" style={{ width: `${pct}%` }} />
+      {/* the project's own mini-spine: seven hue segments, status-aware */}
+      <div className="project-spine" aria-label={`${pct}% complete`} role="img">
+        {STAGES.map((s) => {
+          const st = project.stages[s.id]?.status ?? 'todo'
+          const cur = s.id === project.current
+          return (
+            <span
+              key={s.id}
+              className={`project-spine-seg is-${st} ${cur ? 'is-here' : ''}`}
+              title={`${s.title} — ${st}`}
+            />
+          )
+        })}
       </div>
       <div className="project-card-foot">
         <span>{pct}% · stage {stageNumber(project)}/7</span>
