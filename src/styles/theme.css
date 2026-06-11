@@ -110,6 +110,70 @@ body::before {
     radial-gradient(50vmax 50vmax at 50% 115%, rgba(241, 69, 117, .08), transparent 60%);
 }
 
+/* ── Living ambient layer — energizing, infinite, never cursor-reactive ────
+   Brand-hued aurora blobs drifting on slow infinite loops, a conic sheen
+   rotating forever, and the thread flowing endlessly across the backdrop.
+   All compositor-friendly (transform-only blobs/sheen; gradient falloff
+   instead of filter blur). Hidden under prefers-reduced-motion — the static
+   wash above stays as the calm fallback. */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.amb-blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  will-change: transform;
+}
+.amb-a {
+  width: 58vmax; height: 58vmax; left: -16vmax; top: -20vmax;
+  background: radial-gradient(circle, rgba(255, 150, 86, .20), transparent 62%);
+  animation: amb-a 30s ease-in-out infinite alternate;
+}
+.amb-b {
+  width: 52vmax; height: 52vmax; right: -18vmax; top: -2vmax;
+  background: radial-gradient(circle, rgba(146, 112, 244, .20), transparent 62%);
+  animation: amb-b 38s ease-in-out infinite alternate;
+}
+.amb-c {
+  width: 48vmax; height: 48vmax; left: 24vmax; bottom: -26vmax;
+  background: radial-gradient(circle, rgba(241, 69, 117, .15), transparent 62%);
+  animation: amb-c 46s ease-in-out infinite alternate;
+}
+@keyframes amb-a { to { transform: translate(10vmax, 8vmax) scale(1.15); } }
+@keyframes amb-b { to { transform: translate(-12vmax, 10vmax) scale(.9); } }
+@keyframes amb-c { to { transform: translate(-9vmax, -9vmax) scale(1.18); } }
+/* a faint sheen wheeling around forever — true infinite, never reversing */
+.amb-sheen {
+  position: absolute;
+  inset: -35%;
+  background: conic-gradient(from 0deg at 50% 50%,
+    transparent 0deg, rgba(241, 69, 117, .05) 50deg, transparent 110deg,
+    rgba(146, 112, 244, .045) 215deg, transparent 280deg);
+  animation: amb-spin 90s linear infinite;
+  will-change: transform;
+}
+@keyframes amb-spin { to { transform: rotate(360deg); } }
+/* the throughline itself, flowing across the backdrop without end */
+.amb-thread { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .5; }
+.amb-thread path {
+  fill: none;
+  stroke: url(#amb-grad);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: .35;
+  stroke-dasharray: 7 43; /* pathLength=100 → two pulses, seamless loop */
+  animation: amb-flow 26s linear infinite;
+}
+@keyframes amb-flow { to { stroke-dashoffset: -100; } }
+[data-theme='light'] .ambient { opacity: .55; }
+@media (prefers-reduced-motion: reduce) { .ambient { display: none; } }
+
 /* Paper grain — a barely-there tactile substrate (static, reduced-motion-safe) */
 body::after {
   content: '';

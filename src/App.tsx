@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { lazy, Suspense } from 'react'
+import { Ambient } from './components/Ambient'
 import { BrandBar } from './components/BrandBar'
 import { parseRoute, useHash } from './lib/router'
 import { useCloudSync } from './lib/useCloudSync'
@@ -20,6 +21,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <Ambient />
       <BrandBar syncStatus={sync.enabled ? sync.status : null} />
       <div className="app-body">
         {route.name === 'project' && route.projectId ? (
