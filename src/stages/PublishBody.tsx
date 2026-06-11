@@ -1,40 +1,44 @@
 // ============================================================================
 // Throughline Studio — Publish stage workspace.
-// Close the loop: assemble a preregistration from the study's accumulated plan
-// (question, hypotheses, design, measures), track an open-science checklist,
-// and hand off to ScholarScope (where to publish) and OSF (preregister + share).
-// Persists to project.stages.publish.data. Real data only.
+// Close the loop: show the FROZEN preregistration (assembled + locked in the
+// Collect stage, before fielding — never written here after the fact), track
+// the open-science checklist, and hand off to ScholarScope (where to publish)
+// and OSF (share data + materials). Persists to project.stages.publish.data.
+// Real data only.
 // ============================================================================
 
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
-import type { SavedScale } from '../lib/scales'
+import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef } from '../lib/stages'
-import type { SavedTheory } from '../lib/theories'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
 
 interface PublishData extends Record<string, unknown> {
-  samplingPlan?: string
-  analysisPlan?: string
-  exclusions?: string
   preregistered?: boolean
   dataShared?: boolean
   materialsShared?: boolean
   openAccess?: boolean
   osfUrl?: string
   targetJournal?: string
-}
-interface FrameData {
-  hypotheses?: string[]
-  design?: string
-  theory?: SavedTheory | null
+  // legacy: plan fields once edited here now live in Collect (read via prereg.ts)
+  samplingPlan?: string
+  analysisPlan?: string
+  exclusions?: string
 }
 
-const CHECKS: { key: keyof PublishData; label: string }[] = [
-  { key: 'preregistered', label: 'Study preregistered (OSF / AsPredicted)' },
+const CHECKS: { key: keyof PublishData; label: string; hint?: string }[] = [
+  {
+    key: 'preregistered',
+    label: 'Preregistration filed (OSF / AsPredicted) before data collection',
+    hint: 'The prereg is assembled and locked in the Collect stage — a prereg written after the results is not a prereg.',
+  },
   { key: 'dataShared', label: 'Data shared in an open repository' },
-  { key: 'materialsShared', label: 'Materials & analysis code shared' },
+  {
+    key: 'materialsShared',
+    label: 'Materials & the analysis log shared',
+    hint: 'Export the analysis log from the Analyze stage — it documents every test you captured.',
+  },
   { key: 'openAccess', label: 'Open-access publication planned' },
 ]
 
@@ -50,24 +54,11 @@ export function PublishBody({
   const [form, update] = useStageData<PublishData>(project, 'publish', onChange)
   const [copied, setCopied] = useState(false)
 
-  const frame = (project.stages.frame?.data || {}) as FrameData
-  const scales = ((project.stages.measure?.data as { scales?: SavedScale[] })?.scales) || []
+  const lock = preregLock(project)
 
-  function prereg(): string {
-    const out: string[] = [`# Preregistration — ${project.title}`]
-    if (project.question) out.push(`\n## Research question\n${project.question}`)
-    if (frame.hypotheses && frame.hypotheses.length)
-      out.push(`\n## Hypotheses\n` + frame.hypotheses.map((h, i) => `H${i + 1}: ${h}`).join('\n'))
-    if (frame.design) out.push(`\n## Design\n${frame.design}`)
-    out.push(`\n## Sampling plan\n${form.samplingPlan || '(to write)'}`)
-    if (scales.length)
-      out.push(`\n## Measures\n` + scales.map((s) => `- ${s.name}${s.abbreviation ? ` (${s.abbreviation})` : ''}, ${s.itemCount} items (${s.citation})`).join('\n'))
-    out.push(`\n## Analysis plan\n${form.analysisPlan || '(to write)'}`)
-    out.push(`\n## Exclusion criteria\n${form.exclusions || '(to write)'}`)
-    return out.join('\n')
-  }
   function copyPrereg() {
-    navigator.clipboard?.writeText(prereg()).then(
+    if (!lock) return
+    navigator.clipboard?.writeText(lock.text).then(
       () => {
         setCopied(true)
         window.setTimeout(() => setCopied(false), 1600)
@@ -81,24 +72,30 @@ export function PublishBody({
 
   return (
     <div className="bld">
-      {/* preregistration */}
+      {/* the frozen preregistration */}
       <section className="bld-section">
         <h2 className="bld-h">Preregistration</h2>
-        <p className="bld-muted">
-          Pulled from your study so far: {frame.hypotheses?.length || 0} hypotheses · {frame.design || 'design TBD'} ·{' '}
-          {scales.length} measures. Fill the rest, then copy it into OSF.
-        </p>
-        <label className="bld-label">Sampling plan</label>
-        <textarea className="bld-textarea" rows={3} value={form.samplingPlan ?? ''} onChange={(e) => update({ samplingPlan: e.target.value })} placeholder="Who, how many, how recruited, stopping rule…" />
-        <label className="bld-label">Analysis plan</label>
-        <textarea className="bld-textarea" rows={3} value={form.analysisPlan ?? ''} onChange={(e) => update({ analysisPlan: e.target.value })} placeholder="The confirmatory tests for each hypothesis, α, and any covariates…" />
-        <label className="bld-label">Exclusion criteria</label>
-        <textarea className="bld-textarea" rows={2} value={form.exclusions ?? ''} onChange={(e) => update({ exclusions: e.target.value })} placeholder="Attention checks, incomplete responses, outliers…" />
-        <div className="bld-section-head" style={{ marginTop: 12 }}>
-          <button className="btn btn-fill" onClick={copyPrereg}>
-            <Icon name={copied ? 'check' : 'publish'} size={15} /> {copied ? 'Copied prereg' : 'Assemble & copy preregistration'}
-          </button>
-        </div>
+        {lock ? (
+          <>
+            <p className="prereg-locked">
+              <Icon name="check" size={14} /> Locked {fmtLockDate(lock.lockedAt)} in the Collect stage — frozen before
+              fielding. This is the document of record; report any deviation from it in the paper.
+            </p>
+            <pre className="prereg-pre">{lock.text}</pre>
+            <div className="bld-section-head" style={{ marginTop: 12 }}>
+              <button className="btn btn-fill" onClick={copyPrereg}>
+                <Icon name={copied ? 'check' : 'publish'} size={15} /> {copied ? 'Copied' : 'Copy frozen prereg'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="bld-muted">
+            No locked preregistration on this project. Preregistration happens <em>before</em> data collection —
+            assemble and lock it in the{' '}
+            <a href={`#/p/${project.id}/collect`}>Collect stage</a>, not here. If the data are already in, run the
+            tests as planned but report them as exploratory.
+          </p>
+        )}
       </section>
 
       {/* open science checklist */}
@@ -111,7 +108,10 @@ export function PublishBody({
               <li key={String(c.key)}>
                 <button className={`pub-check ${on ? 'is-on' : ''}`} onClick={() => update({ [c.key]: !on } as Partial<PublishData>)} aria-pressed={on}>
                   <span className="pub-check-box">{on && <Icon name="check" size={13} />}</span>
-                  {c.label}
+                  <span>
+                    {c.label}
+                    {c.hint && <span className="pub-check-hint">{c.hint}</span>}
+                  </span>
                 </button>
               </li>
             )

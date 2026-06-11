@@ -99,6 +99,10 @@ export function AnalyzeBody({
 
   const savedDs = (project.stages.analyze?.data as { dataset?: SavedDataset } | undefined)?.dataset
 
+  // the design framed at the Frame stage conditions what these numbers can claim
+  const frame = (project.stages.frame?.data || {}) as { design?: string; mediators?: string }
+  const crossSectional = frame.design === 'Correlational / survey'
+
   // restore the dataset persisted on the project (once, on mount)
   useEffect(() => {
     if (!savedDs?.csv) return
@@ -180,6 +184,37 @@ export function AnalyzeBody({
       }),
     )
   }
+  /** Reproducibility artifact: a markdown log of every captured analysis, in
+   *  chronological order, with dataset + design context — this is the
+   *  "analysis log" the Publish-stage open-science checklist asks you to share. */
+  function exportLog() {
+    const lines: string[] = [
+      `# Analysis log — ${project.title || 'Untitled study'}`,
+      '',
+      `Generated ${new Date().toISOString()} by Throughline Studio (ToolsScope engine — dependency-free, textbook-verified).`,
+      `Design on file: ${frame.design || '—'}`,
+      ds
+        ? `Dataset: ${ds.name} — ${ds.rows.length} rows × ${ds.variables.length} variables${ds.simulated ? ' (SIMULATED demo data — not real observations)' : ''}`
+        : 'Dataset: (not loaded at export time)',
+      '',
+      '## Captured results (chronological)',
+    ]
+    for (const c of [...captures].reverse()) {
+      lines.push('', `### ${c.title} — ${new Date(c.at).toISOString()}`, '', c.apa)
+    }
+    lines.push(
+      '',
+      '---',
+      'This log documents every analysis captured in the Studio. Share it alongside the data so each result can be re-derived.',
+    )
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'analysis-log.md'
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   function removeCapture(id: string) {
     onChange(
       setStageData(project, 'analyze', {
@@ -258,6 +293,16 @@ export function AnalyzeBody({
         </div>
       </div>
 
+      {crossSectional && (
+        <p className="anz-warn">
+          Design on file: <strong>correlational / survey</strong>. Cross-sectional, single-source data support
+          associations — not causal claims.
+          {frame.mediators?.trim()
+            ? ' The mediation you framed is a causal model this design cannot establish: report indirect effects as consistent with the model, not evidence for it, and say so in the limitations.'
+            : ' Write the results in the language of association.'}
+        </p>
+      )}
+
       {/* analysis picker */}
       <div className="anz-tabs" role="tablist">
         {ANALYSES.map((a) => (
@@ -292,7 +337,12 @@ export function AnalyzeBody({
       {/* captured results — the carry-forward */}
       {captures.length > 0 && (
         <div className="anz-captures">
-          <h3 className="anz-cap-h">Captured for the write-up ({captures.length})</h3>
+          <div className="anz-cap-head">
+            <h3 className="anz-cap-h">Captured for the write-up ({captures.length})</h3>
+            <button className="btn btn-ghost btn-sm" onClick={exportLog}>
+              <Icon name="publish" size={14} /> Export analysis log
+            </button>
+          </div>
           <ul className="anz-cap-list">
             {captures.map((c) => (
               <li key={c.id}>

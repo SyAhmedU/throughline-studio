@@ -109,9 +109,9 @@ export const CASE_STUDIES: CaseStudy[] = [
         stage: 'analyze',
         tool: 'ToolsScope',
         when: 'Months 8–11',
-        did: 'Tested within-team agreement before aggregating, ran reliability on the 7-item scale, then regressed learning behavior and performance on psychological safety.',
-        why: 'Reliability + agreement + OLS are native to ToolsScope, and it forces the aggregation justification the levels trap demanded.',
-        insteadOf: 'No need to export to SPSS — the aggregation and regression ran in the browser.',
+        did: 'Ran reliability on the 7-item scale, justified team-level aggregation with a between-team one-way ANOVA (the rwg/ICC agreement indices came from a specialist tool — the engine does not compute them), then regressed learning behavior and performance on psychological safety.',
+        why: 'Reliability, ANOVA, and OLS are native to ToolsScope, and the levels trap flagged at Frame forces an explicit aggregation justification before any team-level claim.',
+        insteadOf: 'The reliability, ANOVA, and regressions ran in the browser; dedicated agreement indices (rwg, ICC) are the one piece that still needs a specialist tool.',
       },
       {
         stage: 'write',

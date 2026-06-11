@@ -119,16 +119,22 @@ export const STAGES: StageDef[] = [
     n: 4,
     title: 'Collect',
     verb: 'Field the survey',
-    brief: 'Survey creation & data collection',
+    brief: 'Preregistration & data collection',
     blurb:
-      'Deploy the instrument and gather responses — informed-consent gate, branching, waves, and live analytics — then carry clean data forward.',
-    carries: 'a clean dataset',
+      'Lock the preregistration and clear the ethics checks before the first participant, then deploy the instrument and gather responses — informed-consent gate, branching, waves, and live analytics.',
+    carries: 'a locked prereg + a clean dataset',
     tools: [
       {
         name: 'Cadence',
         role: 'Typeform-style, one-question-at-a-time survey deployment with consent, resume, waves, and scale-mean analytics.',
         url: 'https://syahmedu.github.io/cadence/',
         param: 'gen',
+      },
+      {
+        name: 'OSF',
+        role: 'File the locked preregistration (OSF Registries) before fielding — the timestamp is the point.',
+        url: 'https://osf.io/',
+        external: true,
       },
     ],
   },
@@ -175,7 +181,7 @@ export const STAGES: StageDef[] = [
     verb: 'Place it & open it up',
     brief: 'Where to publish & open science',
     blurb:
-      'Choose where to submit on real turnaround data, then preregister, manage, and share your data and materials in the open.',
+      'Choose where to submit on real turnaround data, then share your data, materials, and analysis log in the open — the preregistration was locked back at Collect, before the data existed.',
     carries: 'a placed, open paper',
     tools: [
       {
@@ -185,7 +191,7 @@ export const STAGES: StageDef[] = [
       },
       {
         name: 'OSF',
-        role: 'Open Science Framework — preregister the study, manage materials, and publish open-access datasets.',
+        role: 'Open Science Framework — share data, materials, the analysis log, and the frozen preregistration.',
         url: 'https://osf.io/',
         external: true,
       },

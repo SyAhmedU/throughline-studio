@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef } from '../lib/stages'
 import { saveProject } from '../lib/store'
 import {
@@ -109,9 +110,18 @@ export function FrameBody({
   const results = theories ? searchTheories(theories, tq).slice(0, 12) : []
 
   const tools = stageDef('frame').tools
+  const lock = preregLock(project)
 
   return (
     <div className="bld">
+      {lock && (
+        <p className="prereg-locked">
+          <Icon name="check" size={14} /> This study was preregistered on {fmtLockDate(lock.lockedAt)}. The question,
+          hypotheses, and design below are frozen in the prereg — anything you change from here on is exploratory and
+          must be reported as a deviation.
+        </p>
+      )}
+
       {/* question + gap */}
       <section className="bld-section">
         <h2 className="bld-h">The study in two sentences</h2>

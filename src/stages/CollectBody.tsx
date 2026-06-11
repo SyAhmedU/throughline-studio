@@ -1,14 +1,16 @@
 // ============================================================================
 // Throughline Studio — Collect stage workspace.
 // Plan the data collection: a power-based target N (real Cohen approximations),
-// a survey blueprint assembled from the Measure-stage instrument, consent text,
-// and live collection status. Persists to project.stages.collect.data and
-// hands off to Cadence to actually field the survey.
+// a survey blueprint assembled from the Measure-stage instrument, the
+// PREREGISTRATION (assembled + locked HERE, before the first participant — not
+// at Publish), an ethics & design checklist, consent text, and live collection
+// status. Persists to project.stages.collect.data and hands off to Cadence.
 // ============================================================================
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { nForCorr, nPerGroup } from '../lib/power'
+import { buildPrereg, fmtLockDate, planValues } from '../lib/prereg'
 import type { SavedScale } from '../lib/scales'
 import { deepLink, stageDef } from '../lib/stages'
 import { useStageData } from '../lib/useStageData'
@@ -25,6 +27,17 @@ interface CollectData extends Record<string, unknown> {
   collectedN?: string
   status?: string
   startDate?: string
+  // preregistration (moved here from Publish — it must precede collection)
+  samplingPlan?: string
+  analysisPlan?: string
+  exclusions?: string
+  preregText?: string
+  preregLockedAt?: number
+  // ethics & design checks
+  ethicsApproval?: boolean
+  dataProtection?: boolean
+  compensation?: boolean
+  cmvPlan?: boolean
 }
 
 const DEFAULT_CONSENT =
@@ -32,6 +45,13 @@ const DEFAULT_CONSENT =
 
 const MODES = ['Online panel', 'Online (self-recruited)', 'In-person / lab', 'Field', 'Mixed']
 const STATUSES = ['Not started', 'Piloting', 'Collecting', 'Complete']
+
+const ETHICS_CHECKS: { key: keyof CollectData; label: string }[] = [
+  { key: 'ethicsApproval', label: 'Ethics / IRB approval obtained (or exemption documented)' },
+  { key: 'dataProtection', label: 'Data protection planned — anonymisation, storage, retention' },
+  { key: 'compensation', label: 'Participant burden & compensation are fair and stated' },
+  { key: 'cmvPlan', label: 'Same-source bias addressed — second source, temporal separation, or acknowledged as a limitation' },
+]
 
 export function CollectBody({
   project,
@@ -43,11 +63,23 @@ export function CollectBody({
   topic: string
 }) {
   const [form, update] = useStageData<CollectData>(project, 'collect', onChange)
+  const [copied, setCopied] = useState(false)
   const effectKind = form.effectKind || 'd'
 
   const scales = ((project.stages.measure?.data as { scales?: SavedScale[] })?.scales) || []
   const totalItems = scales.reduce((a, s) => a + (s.itemCount || 0), 0)
   const estMinutes = Math.max(1, Math.round((totalItems * 12) / 60)) // ~12s/item
+
+  const frame = (project.stages.frame?.data || {}) as {
+    hypotheses?: string[]
+    design?: string
+    mediators?: string
+    moderators?: string
+  }
+  const beyondPlanner = [
+    frame.mediators?.trim() ? 'mediator(s)' : '',
+    frame.moderators?.trim() ? 'moderator(s)' : '',
+  ].filter(Boolean)
 
   const suggestedN = useMemo(() => {
     const e = Number(form.effectSize)
@@ -56,6 +88,42 @@ export function CollectBody({
     if (!Number.isFinite(e) || e <= 0) return NaN
     return effectKind === 'r' ? nForCorr(e, a, pw) : nPerGroup(e, a, pw) * 2
   }, [form.effectSize, form.alpha, form.power, effectKind])
+
+  // prereg plan values — fall back to anything written in the old Publish editor
+  const legacy = planValues(project)
+  const plans = {
+    samplingPlan: form.samplingPlan ?? legacy.samplingPlan,
+    analysisPlan: form.analysisPlan ?? legacy.analysisPlan,
+    exclusions: form.exclusions ?? legacy.exclusions,
+  }
+  const locked = !!(form.preregText && form.preregLockedAt)
+
+  function lockPrereg() {
+    update({ ...plans, preregText: buildPrereg(project, plans), preregLockedAt: Date.now() })
+  }
+  function unlockPrereg() {
+    const sure = window.confirm(
+      'Unlock the preregistration?\n\nA preregistration only means something if it stays frozen before data collection. If you have already collected data, revise transparently and report the change as a deviation in the write-up.',
+    )
+    if (sure) update({ preregText: undefined, preregLockedAt: undefined })
+  }
+  function copyPrereg() {
+    const text = form.preregText || buildPrereg(project, plans)
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1600)
+      },
+      () => {},
+    )
+  }
+
+  const ethicsDone = ETHICS_CHECKS.filter((c) => !!form[c.key]).length
+  const fielding = form.status === 'Collecting' || form.status === 'Complete'
+  const gateMissing = [
+    !locked ? 'a locked preregistration' : '',
+    ethicsDone < ETHICS_CHECKS.length ? `${ETHICS_CHECKS.length - ethicsDone} ethics check(s)` : '',
+  ].filter(Boolean)
 
   const tools = stageDef('collect').tools
 
@@ -88,6 +156,13 @@ export function CollectBody({
           Closed-form approximation (Cohen 1988{effectKind === 'r' ? ', Fisher-z' : ', normal approx'}). For exact power
           curves use ToolsScope. {effectKind === 'd' && 'Total across two equal groups.'}
         </p>
+        {beyondPlanner.length > 0 && (
+          <p className="anz-warn">
+            ⚠ Your framed model includes {beyondPlanner.join(' and ')}. This planner covers only a two-group d and a
+            bivariate r — interaction and indirect effects typically need substantially larger samples than either.
+            Power the smallest effect you must detect, not the main effect.
+          </p>
+        )}
       </section>
 
       {/* instrument blueprint */}
@@ -112,6 +187,73 @@ export function CollectBody({
         )}
       </section>
 
+      {/* preregistration — locked BEFORE fielding */}
+      <section className="bld-section">
+        <h2 className="bld-h">Preregistration — lock it before the first participant</h2>
+        {locked ? (
+          <>
+            <p className="prereg-locked">
+              <Icon name="check" size={14} /> Locked {fmtLockDate(form.preregLockedAt!)} — the document below is
+              frozen. File it at OSF / AsPredicted, then field the study. Any change from here on is a deviation:
+              report it.
+            </p>
+            <pre className="prereg-pre">{form.preregText}</pre>
+            <div className="bld-section-head" style={{ marginTop: 12 }}>
+              <button className="btn btn-fill" onClick={copyPrereg}>
+                <Icon name={copied ? 'check' : 'publish'} size={15} /> {copied ? 'Copied' : 'Copy preregistration'}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={unlockPrereg}>
+                Unlock to revise…
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="bld-muted">
+              Pulled from your study so far: {frame.hypotheses?.length || 0} hypotheses · {frame.design || 'design TBD'} ·{' '}
+              {scales.length} measures. Write the three plans, then lock — the timestamp is what makes it a
+              preregistration.
+            </p>
+            <label className="bld-label">Sampling plan</label>
+            <textarea className="bld-textarea" rows={3} value={plans.samplingPlan} onChange={(e) => update({ samplingPlan: e.target.value })} placeholder="Who, how many, how recruited, stopping rule…" />
+            <label className="bld-label">Analysis plan</label>
+            <textarea className="bld-textarea" rows={3} value={plans.analysisPlan} onChange={(e) => update({ analysisPlan: e.target.value })} placeholder="The confirmatory test for each hypothesis, α, and any covariates…" />
+            <label className="bld-label">Exclusion criteria</label>
+            <textarea className="bld-textarea" rows={2} value={plans.exclusions} onChange={(e) => update({ exclusions: e.target.value })} placeholder="Attention checks, incomplete responses, outliers…" />
+            <div className="bld-section-head" style={{ marginTop: 12 }}>
+              <button className="btn btn-fill" onClick={lockPrereg}>
+                <Icon name="publish" size={15} /> Lock preregistration
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={copyPrereg}>
+                {copied ? 'Copied' : 'Copy draft'}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* ethics & design checklist */}
+      <section className="bld-section">
+        <h2 className="bld-h">Ethics & design checks ({ethicsDone}/{ETHICS_CHECKS.length})</h2>
+        <ul className="pub-checks">
+          {ETHICS_CHECKS.map((c) => {
+            const on = !!form[c.key]
+            return (
+              <li key={String(c.key)}>
+                <button className={`pub-check ${on ? 'is-on' : ''}`} onClick={() => update({ [c.key]: !on } as Partial<CollectData>)} aria-pressed={on}>
+                  <span className="pub-check-box">{on && <Icon name="check" size={13} />}</span>
+                  {c.label}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="anz-fineprint">
+          Consent is the last step of research ethics, not the whole of it — approval, data protection, and fair
+          treatment come first.
+        </p>
+      </section>
+
       {/* consent */}
       <section className="bld-section">
         <h2 className="bld-h">Informed consent</h2>
@@ -127,6 +269,12 @@ export function CollectBody({
       {/* fielding status */}
       <section className="bld-section">
         <h2 className="bld-h">Fielding</h2>
+        {fielding && gateMissing.length > 0 && (
+          <p className="anz-error">
+            ⚠ You are fielding without {gateMissing.join(' and ')}. Without a frozen prereg, every test becomes
+            exploratory; without the ethics checks, the data may not be reportable at all.
+          </p>
+        )}
         <div className="bld-grid">
           <Field label="Mode">
             <select className="disc-select" value={form.mode ?? ''} onChange={(e) => update({ mode: e.target.value })}>

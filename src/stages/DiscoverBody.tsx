@@ -159,7 +159,11 @@ export function DiscoverBody({
     <div className="disc">
       <p className="disc-lead">
         Searching <strong>{corpus.papers.length.toLocaleString()}</strong> hand-coded papers across{' '}
-        <strong>{corpus.constructs.length}</strong> constructs — Syed's Research Book corpus.
+        <strong>{corpus.constructs.length}</strong> constructs — Syed's Research Book corpus.{' '}
+        <span className="disc-dim">
+          Coverage is OB / management, coded by one researcher — a gap here may just be the corpus's edge. For other
+          fields, or to check recall, use the ⚡ live OpenAlex layer or the full tools below.
+        </span>
       </p>
 
       {/* reading list disclosure */}
