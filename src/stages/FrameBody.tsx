@@ -7,7 +7,7 @@
 // FallacyScope for the full wizard, map, and pitfalls.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
@@ -17,6 +17,7 @@ import { saveProject } from '../lib/store'
 import {
   loadTheories,
   searchTheories,
+  suggestTheories,
   theoryLink,
   toSavedTheory,
   type SavedTheory,
@@ -110,6 +111,27 @@ export function FrameBody({
       .catch(() => setTStatus('error'))
   }
   const results = theories ? searchTheories(theories, tq).slice(0, 12) : []
+
+  // suggested lenses — deterministic token match on the study's own words;
+  // catalogue loads as soon as the lens is empty so suggestions can render
+  useEffect(() => {
+    if (!form.theory) ensureTheories()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.theory])
+  const suggested = useMemo(
+    () =>
+      theories && !form.theory
+        ? suggestTheories(theories, [
+            project.title,
+            form.question,
+            form.iv,
+            form.dv,
+            form.mediators,
+            form.moderators,
+          ])
+        : [],
+    [theories, form.theory, project.title, form.question, form.iv, form.dv, form.mediators, form.moderators],
+  )
 
   // ── ✦ AI draft — fills EMPTY fields only, grounded on the reading list ────
   // The draft is a starting point to verify and edit, never a source: the
@@ -323,6 +345,31 @@ export function FrameBody({
           </div>
         ) : (
           <>
+            {suggested.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <span className="bld-label" style={{ margin: '0 0 6px' }}>
+                  Suggested from your study's own words — token match, judge fit yourself
+                </span>
+                <div className="disc-results">
+                  {suggested.map((t) => (
+                    <article key={t.slug} className="disc-card">
+                      <div className="disc-card-main">
+                        <h3 className="disc-title">
+                          {t.name} {t.acronym && <span className="disc-dim">({t.acronym})</span>}
+                        </h3>
+                        {t.oneLiner && <p className="bld-attached-line">{t.oneLiner}</p>}
+                      </div>
+                      <div className="disc-card-actions">
+                        <button className="btn btn-fill btn-sm" onClick={() => set({ theory: toSavedTheory(t) })}>
+                          <Icon name="plus" size={14} /> Lens
+                        </button>
+                        <a className="btn btn-ghost btn-sm" href={theoryLink(t.slug)} target="_blank" rel="noopener noreferrer">Open</a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="disc-search">
               <Icon name="frame" size={16} />
               <input

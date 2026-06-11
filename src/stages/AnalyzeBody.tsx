@@ -100,8 +100,59 @@ export function AnalyzeBody({
   const savedDs = (project.stages.analyze?.data as { dataset?: SavedDataset } | undefined)?.dataset
 
   // the design framed at the Frame stage conditions what these numbers can claim
-  const frame = (project.stages.frame?.data || {}) as { design?: string; mediators?: string }
+  const frame = (project.stages.frame?.data || {}) as {
+    design?: string
+    iv?: string
+    dv?: string
+    mediators?: string
+    moderators?: string
+  }
   const crossSectional = frame.design === 'Correlational / survey'
+
+  // ── Suggested analyses — deterministic, from the framed design (no AI) ────
+  // Mirrors ToolsScope's recommender idea: read what was framed and point at
+  // the right test. Embedded analyses are one click; mediation/moderation
+  // deep-link to ToolsScope (the full engine lives there).
+  const suggestions = useMemo(() => {
+    const out: { label: string; why: string; run?: Analysis; external?: boolean }[] = []
+    const experimental = frame.design === 'Experimental' || frame.design === 'Quasi-experimental'
+    out.push({
+      label: 'Reliability (α) first',
+      why: 'compute α for every multi-item scale before building composites',
+      run: 'reliability',
+    })
+    if (frame.iv?.trim() && frame.dv?.trim()) {
+      if (experimental) {
+        out.push({
+          label: 't-test / ANOVA',
+          why: `group difference on ${frame.dv.trim()} across ${frame.iv.trim()} conditions`,
+          run: 'ttest',
+        })
+      } else {
+        out.push({
+          label: 'Correlations',
+          why: `the ${frame.iv.trim()} → ${frame.dv.trim()} association (report as association${crossSectional ? ', not cause' : ''})`,
+          run: 'correlations',
+        })
+      }
+    }
+    if (frame.mediators?.trim()) {
+      out.push({
+        label: 'Mediation — PROCESS Model 4',
+        why: `indirect effect via ${frame.mediators.trim()} — run in ToolsScope (bootstrap CIs)`,
+        external: true,
+      })
+    }
+    if (frame.moderators?.trim()) {
+      out.push({
+        label: 'Moderation — PROCESS Model 1',
+        why: `interaction with ${frame.moderators.trim()} — run in ToolsScope`,
+        external: true,
+      })
+    }
+    return out
+  }, [frame.design, frame.iv, frame.dv, frame.mediators, frame.moderators, crossSectional])
+  const framedAnything = !!(frame.design || frame.iv?.trim() || frame.dv?.trim())
 
   // restore the dataset persisted on the project (once, on mount)
   useEffect(() => {
@@ -301,6 +352,36 @@ export function AnalyzeBody({
             ? ' The mediation you framed is a causal model this design cannot establish: report indirect effects as consistent with the model, not evidence for it, and say so in the limitations.'
             : ' Write the results in the language of association.'}
         </p>
+      )}
+
+      {/* suggested analyses — deterministic, from the framed design */}
+      {framedAnything && suggestions.length > 0 && (
+        <div className="anz-ds" style={{ marginBottom: 14 }}>
+          <p className="anz-ds-meta" style={{ marginTop: 0 }}>
+            <strong>Suggested from your framed design</strong> — derived from Frame (no AI); the framing decides, you judge.
+          </p>
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {suggestions.map((s) => (
+              <li key={s.label} style={{ marginBottom: 6 }}>
+                {s.run ? (
+                  <button className="btn btn-ghost btn-sm" onClick={() => setAnalysis(s.run!)}>
+                    {s.label}
+                  </button>
+                ) : (
+                  <a
+                    className="btn btn-ghost btn-sm"
+                    href={deepLink(stageDef('analyze').tools[0], topic)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {s.label} ↗
+                  </a>
+                )}{' '}
+                <span className="disc-dim">— {s.why}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* analysis picker */}

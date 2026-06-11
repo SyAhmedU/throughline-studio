@@ -28,6 +28,10 @@ interface CollectData extends Record<string, unknown> {
   collectedN?: string
   status?: string
   startDate?: string
+  // wave planning (longitudinal designs)
+  waves?: string
+  waveIntervalWeeks?: string
+  waveRetention?: string
   // preregistration (moved here from Publish — it must precede collection)
   samplingPlan?: string
   analysisPlan?: string
@@ -77,6 +81,7 @@ export function CollectBody({
     mediators?: string
     moderators?: string
   }
+  const longitudinal = frame.design === 'Longitudinal'
   const beyondPlanner = [
     frame.mediators?.trim() ? 'mediator(s)' : '',
     frame.moderators?.trim() ? 'moderator(s)' : '',
@@ -89,6 +94,41 @@ export function CollectBody({
     if (!Number.isFinite(e) || e <= 0) return NaN
     return effectKind === 'r' ? nForCorr(e, a, pw) : nPerGroup(e, a, pw) * 2
   }, [form.effectSize, form.alpha, form.power, effectKind])
+
+  // ── Collection plan — design-aware, deterministic (no AI) ─────────────────
+  // Longitudinal: plan waves and over-recruit for attrition so the LAST wave
+  // still meets the powered N (recruit = N / retention^(waves−1), compounding).
+  // Cross-sectional: one wave, recruit the powered N plus an exclusion buffer.
+  const finalN = Number(form.targetN) || (Number.isFinite(suggestedN) ? suggestedN : NaN)
+  const nWaves = Math.max(2, Math.min(6, Number(form.waves) || 2))
+  const intervalWk = Math.max(1, Number(form.waveIntervalWeeks) || 6)
+  const retention = Math.min(0.95, Math.max(0.3, (Number(form.waveRetention) || 70) / 100))
+  const recruitN = Number.isFinite(finalN) ? Math.ceil(finalN / Math.pow(retention, nWaves - 1)) : NaN
+  const waveRows = Number.isFinite(recruitN)
+    ? Array.from({ length: nWaves }, (_, i) => ({
+        wave: i + 1,
+        week: i * intervalWk,
+        expectedN: Math.round(recruitN * Math.pow(retention, i)),
+      }))
+    : []
+
+  /** The plan as one verifiable sentence — insertable into the sampling plan. */
+  function collectionPlanText(): string {
+    if (longitudinal && Number.isFinite(recruitN)) {
+      return `Longitudinal design with ${nWaves} measurement waves, ${intervalWk} weeks apart. Recruit N = ${recruitN} at Wave 1; assuming ~${Math.round(retention * 100)}% wave-to-wave retention, this yields ≈ ${waveRows[waveRows.length - 1].expectedN} complete cases at Wave ${nWaves} (powered target: ${finalN}). Stop recruiting when Wave 1 reaches ${recruitN}.`
+    }
+    if (Number.isFinite(finalN)) {
+      return `Cross-sectional single-wave collection. Recruit ≈ ${Math.ceil(finalN * 1.1)} to retain the powered target of ${finalN} after exclusions (~10% buffer). Stop at the recruitment ceiling, not at a significant p.`
+    }
+    return ''
+  }
+  function insertPlanIntoSampling() {
+    const text = collectionPlanText()
+    if (!text || locked) return
+    const existing = plans.samplingPlan.trim()
+    if (existing.includes(text)) return
+    update({ samplingPlan: existing ? existing + '\n\n' + text : text })
+  }
 
   // prereg plan values — fall back to anything written in the old Publish editor
   const legacy = planValues(project)
@@ -141,6 +181,7 @@ export function CollectBody({
         ? `Instrument: ${scales.map((s) => `${s.name}${s.itemCount ? ` (${s.itemCount} items)` : ''}`).join('; ')}`
         : 'No instrument yet.',
       targetN ? `Target N: ${targetN}` : 'Target N not set yet.',
+      collectionPlanText() ? `Collection plan (computed, use as-is): ${collectionPlanText()}` : '',
       'Rules: NEVER invent citations, author names, statistics, software versions, or empirical claims. Write concrete, checkable plans in plain prose: samplingPlan = who, how many, how recruited, stopping rule; analysisPlan = the confirmatory test per hypothesis with alpha; exclusions = attention checks, incompletes, outlier rule. Base everything ONLY on the facts above.',
     ].join('\n\n')
     const res = await generate(prompt, {
@@ -210,6 +251,67 @@ export function CollectBody({
             bivariate r — interaction and indirect effects typically need substantially larger samples than either.
             Power the smallest effect you must detect, not the main effect.
           </p>
+        )}
+      </section>
+
+      {/* collection plan — design-aware (waves for longitudinal, single-shot else) */}
+      <section className="bld-section">
+        <h2 className="bld-h">Collection plan — from your framed design</h2>
+        {!frame.design && (
+          <p className="bld-muted">Choose a design in Frame and the plan appears here (waves for longitudinal, single-shot otherwise).</p>
+        )}
+        {frame.design && !longitudinal && (
+          <>
+            <p className="bld-muted">
+              <strong>{frame.design}</strong> → single-wave collection.{' '}
+              {Number.isFinite(finalN)
+                ? `Recruit ≈ ${Math.ceil(finalN * 1.1)} to keep the powered target of ${finalN} after exclusions (~10% buffer).`
+                : 'Set an effect size above to get a recruit target.'}
+            </p>
+          </>
+        )}
+        {longitudinal && (
+          <>
+            <div className="bld-grid">
+              <Field label="Waves">
+                <input className="bld-input" inputMode="numeric" value={form.waves ?? '2'} onChange={(e) => update({ waves: e.target.value })} />
+              </Field>
+              <Field label="Interval (weeks)">
+                <input className="bld-input" inputMode="numeric" value={form.waveIntervalWeeks ?? '6'} onChange={(e) => update({ waveIntervalWeeks: e.target.value })} />
+              </Field>
+              <Field label="Expected retention per wave (%)">
+                <input className="bld-input" inputMode="numeric" value={form.waveRetention ?? '70'} onChange={(e) => update({ waveRetention: e.target.value })} />
+              </Field>
+            </div>
+            {Number.isFinite(recruitN) ? (
+              <>
+                <div className="anz-stat-row" style={{ marginTop: 12 }}>
+                  <Stat label="Recruit at Wave 1" value={String(recruitN)} />
+                  <Stat label={`Expected at Wave ${nWaves}`} value={String(waveRows[waveRows.length - 1].expectedN)} />
+                </div>
+                <ol className="bld-blueprint">
+                  {waveRows.map((w) => (
+                    <li key={w.wave}>
+                      <span className="bld-bp-n">W{w.wave}</span>
+                      <span>Week {w.week} — expected n ≈ {w.expectedN}{w.wave === 1 ? ' (recruit)' : ''}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="anz-fineprint">
+                  Over-recruitment compounds retention across waves so the LAST wave still meets the powered N.
+                  Retention is your estimate — verify against your panel's track record. Cadence tracks waves natively
+                  (`cadence_wave_*`).
+                </p>
+              </>
+            ) : (
+              <p className="bld-muted">Set an effect size above to get per-wave targets.</p>
+            )}
+          </>
+        )}
+        {frame.design && collectionPlanText() && !locked && (
+          <button className="btn btn-ghost btn-sm" onClick={insertPlanIntoSampling} style={{ marginTop: 8 }}>
+            <Icon name="plus" size={14} /> Insert into sampling plan
+          </button>
         )}
       </section>
 

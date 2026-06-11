@@ -56,6 +56,48 @@ export function searchTheories(all: Theory[], query: string): Theory[] {
   })
 }
 
+// ── Suggested theories — deterministic, no AI ───────────────────────────────
+// Token-scores the study's own words (title, question, framed constructs)
+// against the catalogue: construct hits count most, then name/acronym/keywords,
+// then the one-liner. A match is a navigational hint to judge, never a verdict.
+
+const STOP = new Set([
+  'the', 'and', 'for', 'with', 'does', 'how', 'what', 'why', 'between', 'among',
+  'effect', 'effects', 'impact', 'role', 'study', 'research', 'employee', 'employees',
+  'organization', 'organizations', 'organizational', 'work', 'workplace', 'theory',
+])
+
+export function suggestTheories(all: Theory[], phrases: string[]): Theory[] {
+  const tokens = [...new Set(
+    phrases
+      .join(' ')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/[\s-]+/)
+      .filter((t) => t.length >= 4 && !STOP.has(t)),
+  )]
+  if (!tokens.length) return []
+  return all
+    .map((t) => {
+      const constructs = (t.constructs || []).join(' ').toLowerCase()
+      const name = (t.name + ' ' + (t.acronym || '')).toLowerCase()
+      const keywords = (t.keywords || []).join(' ').toLowerCase()
+      const oneLiner = (t.oneLiner || '').toLowerCase()
+      let score = 0
+      for (const tok of tokens) {
+        if (constructs.includes(tok)) score += 3
+        else if (name.includes(tok)) score += 2
+        else if (keywords.includes(tok)) score += 2
+        else if (oneLiner.includes(tok)) score += 1
+      }
+      return { t, score }
+    })
+    .filter((x) => x.score >= 3) // one weak hit isn't a suggestion
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((x) => x.t)
+}
+
 export function theoryCitation(t: Theory): string {
   const k = t.keyStudy
   if (k?.authors) return `${k.authors} (${k.year ?? 'n.d.'}). ${k.title ?? ''}`.trim()

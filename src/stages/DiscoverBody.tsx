@@ -155,6 +155,28 @@ export function DiscoverBody({
     }
   }, [liveOn, liveQuery])
 
+  // constructs suggested from the study's own title/question — deterministic
+  // token match against the 167 hand-coded construct names, click to filter
+  const suggestedConstructs = useMemo(() => {
+    if (!corpus) return []
+    const words = (project.title + ' ' + topic)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/[\s-]+/)
+      .filter((w) => w.length >= 4)
+    if (!words.length) return []
+    return corpus.constructs
+      .map((c) => {
+        const nameTokens = c.name.toLowerCase().split(/[\s/&-]+/).filter((t) => t.length >= 4)
+        const hits = nameTokens.filter((t) => words.some((w) => w.includes(t) || t.includes(w))).length
+        return { c, score: nameTokens.length ? hits / nameTokens.length : 0, hits }
+      })
+      .filter((x) => x.hits >= 1 && x.score >= 0.5) // at least half the construct name matched
+      .sort((a, b) => b.score - a.score || b.c.paperCount - a.c.paperCount)
+      .slice(0, 6)
+      .map((x) => x.c)
+  }, [corpus, project.title, topic])
+
   const list = readingList(project)
   const inList = useMemo(() => new Set(list.map((p) => p.id)), [list])
 
@@ -220,6 +242,37 @@ export function DiscoverBody({
           fields, or to check recall, use the ↑ recent tier, the ⚡ live OpenAlex layer, or the full tools below.
         </span>
       </p>
+
+      {/* ↑ recent tier CTA — the newest papers are opt-in (42 MB), so say so loudly */}
+      {!recentOn && (
+        <p className="anz-warn">
+          Looking for the newest papers? The hand-coded corpus ends where Syed's coding ends — load the{' '}
+          <strong>↑ recent tier</strong> (real OpenAlex 2024→ papers, machine-tagged to the same constructs;
+          one-time ~42 MB download, remembered on this browser).{' '}
+          <button className="btn btn-ghost btn-sm" onClick={() => toggleRecent(true)} style={{ verticalAlign: 'baseline' }}>
+            ↑ Load recent papers
+          </button>
+        </p>
+      )}
+
+      {/* constructs matched from the study's own title — click to filter */}
+      {suggestedConstructs.length > 0 && !filters.constructCode && (
+        <div style={{ margin: '0 0 12px' }}>
+          <span className="disc-count" style={{ marginRight: 8 }}>From your title:</span>
+          <span className="disc-chips" style={{ display: 'inline-flex' }}>
+            {suggestedConstructs.map((c) => (
+              <button
+                key={c.code}
+                className="disc-chip"
+                onClick={() => setFilters((f) => ({ ...f, constructCode: c.code }))}
+                title={`Filter the corpus by ${c.name} (${c.paperCount} papers)`}
+              >
+                {c.name} ({c.paperCount})
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
 
       {/* reading list disclosure */}
       <button className="disc-list-bar" onClick={() => setShowList((v) => !v)} aria-expanded={showList}>
