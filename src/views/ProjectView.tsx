@@ -5,11 +5,12 @@
 // that deep-links into every tool).
 // ============================================================================
 
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Spine } from '../components/Spine'
+import { carrySummary } from '../lib/artifacts'
 import { navigate } from '../lib/router'
-import { STAGE_IDS } from '../lib/stages'
+import { STAGE_IDS, STAGES } from '../lib/stages'
 import { getProject, saveProject, subscribe } from '../lib/store'
 import type { Project, StageId } from '../lib/types'
 import { StageShell } from '../stages/StageShell'
@@ -94,6 +95,8 @@ export function ProjectView({
         placeholder="e.g. Does servant leadership raise team engagement?"
       />
 
+      <ThreadTray project={project} active={active} onPick={pick} />
+
       <div className="ws-body">
         <Spine project={project} activeStage={active} onPick={pick} />
         <main className="ws-stage" id="main">
@@ -106,6 +109,47 @@ export function ProjectView({
           />
         </main>
       </div>
+    </div>
+  )
+}
+
+/** The carry, embodied: a persistent strip of what every stage has actually
+ *  accumulated — visible from anywhere on the spine, each chip a jump. This is
+ *  the throughline as a thing you can see and touch, not a metaphor in copy. */
+function ThreadTray({
+  project,
+  active,
+  onPick,
+}: {
+  project: Project
+  active: StageId
+  onPick: (id: StageId) => void
+}) {
+  const items = STAGES.map((s) => ({ s, carry: carrySummary(project, s.id) })).filter(
+    (x): x is { s: (typeof STAGES)[number]; carry: string } => x.carry !== null,
+  )
+  if (items.length === 0) return null
+  return (
+    <div className="thread-tray" role="navigation" aria-label="What the thread carries so far">
+      <span className="thread-tray-label">
+        <Icon name="arrow" size={12} /> the thread
+      </span>
+      {items.map(({ s, carry }, i) => (
+        <Fragment key={s.id}>
+          {i > 0 && (
+            <span className="thread-tray-sep" aria-hidden="true">
+              →
+            </span>
+          )}
+          <button
+            className={`thread-tray-chip ${s.id === active ? 'is-here' : ''}`}
+            onClick={() => onPick(s.id)}
+            title={`${s.title}: ${carry}`}
+          >
+            <b>{s.title}</b> · {carry}
+          </button>
+        </Fragment>
+      ))}
     </div>
   )
 }
