@@ -132,7 +132,7 @@ export function Hub() {
         </p>
         <ol className="stages-rail">
           {STAGES.map((s) => (
-            <li className="stage-chip" key={s.id}>
+            <li className="stage-chip" key={s.id} data-n={s.n}>
               <div className="stage-chip-top">
                 <span className="stage-chip-icon">
                   <Icon name={s.id} size={18} />

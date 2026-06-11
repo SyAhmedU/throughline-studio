@@ -69,8 +69,8 @@ export function StageShell({
                 : PublishBody
 
   return (
-    <section className="stage" aria-labelledby="stage-title">
-      <header className="stage-head">
+    <section className="stage" aria-labelledby="stage-title" data-stage-n={def.n}>
+      <header className="stage-head" key={stageId} data-n={String(def.n).padStart(2, '0')}>
         <div className="stage-eyebrow">
           <span className="stage-num">{String(def.n).padStart(2, '0')}</span>
           <span className="stage-brief-tag">{def.brief}</span>

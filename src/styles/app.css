@@ -1594,6 +1594,83 @@
   .disc-select, .disc-select-sm { max-width: none; flex: 1 1 140px; }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   THE A→Z HUE SYSTEM — the brand gradient travels through the seven stages.
+   Each stage owns one interpolated colour along coral→magenta→violet, so the
+   thread is structural: hub rail, workspace spine, and stage headers all
+   speak the same position in the journey.
+   ════════════════════════════════════════════════════════════════════════ */
+.stages-rail li:nth-child(1), .spine-item:nth-child(1), .stage[data-stage-n='1'] { --sc: #FF9656; }
+.stages-rail li:nth-child(2), .spine-item:nth-child(2), .stage[data-stage-n='2'] { --sc: #FA7E5F; }
+.stages-rail li:nth-child(3), .spine-item:nth-child(3), .stage[data-stage-n='3'] { --sc: #F66569; }
+.stages-rail li:nth-child(4), .spine-item:nth-child(4), .stage[data-stage-n='4'] { --sc: #F24C72; }
+.stages-rail li:nth-child(5), .spine-item:nth-child(5), .stage[data-stage-n='5'] { --sc: #D85096; }
+.stages-rail li:nth-child(6), .spine-item:nth-child(6), .stage[data-stage-n='6'] { --sc: #B560C5; }
+.stages-rail li:nth-child(7), .spine-item:nth-child(7), .stage[data-stage-n='7'] { --sc: #9270F4; }
+
+/* ── Hub rail: hue-tinted chips with a faint serif numeral watermark ── */
+.stage-chip { position: relative; overflow: hidden; }
+.stage-chip::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--sc, var(--warm-b)); opacity: .85;
+}
+.stage-chip::after {
+  content: attr(data-n); position: absolute; right: 8px; bottom: -16px;
+  font: 600 84px/1 var(--serif); color: var(--sc, var(--warm-b));
+  opacity: .07; pointer-events: none;
+}
+.stage-chip-icon {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--sc, var(--warm-b)) 76%, #ffd9b8), var(--sc, var(--warm-b)));
+  box-shadow: 0 4px 14px -6px color-mix(in srgb, var(--sc, var(--warm-b)) 70%, transparent);
+}
+.stage-chip-n { color: var(--sc, var(--ink-mute)); font-weight: 600; }
+.stage-chip:hover {
+  border-color: color-mix(in srgb, var(--sc, var(--warm-b)) 45%, var(--line));
+  box-shadow: var(--shadow-sm), var(--card-hi), 0 10px 28px -16px color-mix(in srgb, var(--sc, var(--warm-b)) 55%, transparent);
+}
+
+/* ── Spine: each node carries its stage's colour ── */
+.spine-item.is-done .spine-node {
+  background: var(--sc, var(--accent));
+  box-shadow: 0 2px 10px -3px color-mix(in srgb, var(--sc, var(--accent)) 60%, transparent);
+}
+.spine-item.is-active .spine-node { color: var(--sc, var(--accent)); border-color: var(--sc, var(--accent)); }
+.spine-item.is-current .spine-node { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc, var(--accent)) 16%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .spine-item.is-current .spine-node { animation: node-breathe 4.5s ease-in-out infinite; }
+}
+@keyframes node-breathe {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc, var(--accent)) 16%, transparent); }
+  50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--sc, var(--accent)) 8%, transparent); }
+}
+
+/* ── Stage workspace: header inherits the stage hue + giant ghost numeral ── */
+.stage-head { position: relative; }
+@media (prefers-reduced-motion: no-preference) {
+  .stage-head { animation: rise .45s var(--ease) both; }
+}
+.stage-head::before {
+  content: attr(data-n); position: absolute; right: -6px; top: -30px;
+  font: 600 128px/1 var(--serif); color: var(--sc, var(--accent));
+  opacity: .055; pointer-events: none; user-select: none;
+}
+.stage-num { color: var(--sc, var(--ink-mute)); font-weight: 600; }
+.stage[data-stage-n] .stage-brief-tag { color: var(--sc); }
+.stage[data-stage-n] .stage-title svg { color: var(--sc); }
+.stage[data-stage-n] .status-pill.is-active { color: var(--sc); border-color: var(--sc); }
+.stage[data-stage-n] .status-pill.is-done { background: var(--sc); }
+.stage[data-stage-n] .tool-card.is-primary { border-image: none; border-left: 3px solid var(--sc); }
+.stage[data-stage-n] .side-carry svg { color: var(--sc); }
+
+/* ── Project cards: progress reads as seven stage segments ── */
+.project-progress { position: relative; }
+.project-progress::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    transparent 0, transparent calc(100% / 7 - 2px),
+    var(--surface) calc(100% / 7 - 2px), var(--surface) calc(100% / 7));
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
