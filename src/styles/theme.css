@@ -47,9 +47,12 @@
   --accent-2: var(--warm-c);
 
   --bar-bg: rgba(16, 11, 26, .72);
-  --shadow-sm: 0 4px 14px -8px rgba(0, 0, 0, .6);
-  --shadow: 0 18px 44px -22px rgba(0, 0, 0, .7);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35), 0 4px 14px -8px rgba(0, 0, 0, .6);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 44px -22px rgba(0, 0, 0, .7);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, .35), 0 22px 48px -20px rgba(0, 0, 0, .65), 0 14px 40px -24px rgba(241, 69, 117, .28);
   --glow: 0 8px 30px -10px rgba(241, 69, 117, .5);
+  /* faint top-edge highlight that gives dark surfaces a machined feel */
+  --card-hi: inset 0 1px 0 rgba(255, 255, 255, .045);
   color-scheme: dark;
 }
 
@@ -71,9 +74,11 @@
   --accent-2: #7a54e0;
 
   --bar-bg: rgba(255, 253, 251, .8);
-  --shadow-sm: 0 4px 14px -8px rgba(120, 80, 110, .25);
-  --shadow: 0 18px 44px -24px rgba(120, 70, 110, .3);
+  --shadow-sm: 0 1px 2px rgba(120, 80, 110, .08), 0 4px 14px -8px rgba(120, 80, 110, .25);
+  --shadow: 0 1px 2px rgba(120, 80, 110, .1), 0 18px 44px -24px rgba(120, 70, 110, .3);
+  --shadow-lift: 0 2px 4px rgba(120, 80, 110, .08), 0 22px 48px -20px rgba(120, 70, 110, .28), 0 14px 40px -24px rgba(241, 69, 117, .22);
   --glow: 0 8px 26px -10px rgba(241, 69, 117, .35);
+  --card-hi: inset 0 1px 0 rgba(255, 255, 255, .9);
   color-scheme: light;
 }
 
@@ -103,6 +108,25 @@ body::before {
     radial-gradient(60vmax 60vmax at 12% -8%, rgba(255, 150, 86, .10), transparent 60%),
     radial-gradient(55vmax 55vmax at 105% 18%, rgba(146, 112, 244, .12), transparent 60%),
     radial-gradient(50vmax 50vmax at 50% 115%, rgba(241, 69, 117, .08), transparent 60%);
+}
+
+/* Paper grain — a barely-there tactile substrate (static, reduced-motion-safe) */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  opacity: .04;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme='light'] body::after { mix-blend-mode: multiply; opacity: .03; }
+
+/* Fraunces breathes through its optical-size axis on display text */
+h1, h2, h3, .hero-title, .stage-title, .modal-title, .section-h2 {
+  font-optical-sizing: auto;
+  text-wrap: balance;
 }
 
 a { color: inherit; }
