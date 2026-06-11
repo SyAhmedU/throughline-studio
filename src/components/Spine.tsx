@@ -5,6 +5,7 @@
 // ============================================================================
 
 import type { CSSProperties } from 'react'
+import { derivedStatus } from '../lib/artifacts'
 import { STAGES } from '../lib/stages'
 import type { Project, StageId } from '../lib/types'
 import { Icon } from './Icon'
@@ -32,7 +33,7 @@ export function Spine({
       </div>
       <ol className="spine-list" style={{ '--spine-fill': `${fill}%` } as CSSProperties}>
         {STAGES.map((s) => {
-          const st = project.stages[s.id]?.status ?? 'todo'
+          const st = derivedStatus(project, s.id)
           const isActive = s.id === activeStage
           return (
             <li key={s.id} className={`spine-item is-${st} ${isActive ? 'is-current' : ''}`}>

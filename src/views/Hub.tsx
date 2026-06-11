@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { VideoLightbox } from '../components/VideoLightbox'
+import { derivedStatus } from '../lib/artifacts'
 import { navigate } from '../lib/router'
 import { STAGES } from '../lib/stages'
 import { createProject, deleteProject, loadProjects, progress, subscribe } from '../lib/store'
@@ -30,60 +31,92 @@ export function Hub() {
     navigate(`/p/${p.id}`)
   }
 
+  // a returning user has projects: lead with the work, retire the pitch
+  const returning = projects.length > 0
+
   return (
     <div className="hub">
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="hero">
-        <div className="hero-thread" aria-hidden="true" />
-        <p className="hero-kicker">The shippable research workspace</p>
-        <h1 className="hero-title">
-          Conduct research, <span className="grad-text">A&nbsp;→&nbsp;Z</span>
-        </h1>
-        <p className="hero-sub">
-          One connected throughline — discover the literature, frame the question, build the
-          measures, collect and analyze the data, then write and place the paper. Every step
-          carries the last one forward.
-        </p>
-        <div className="hero-cta">
-          <button className="btn btn-fill btn-lg" onClick={() => setShowNew(true)}>
-            <Icon name="plus" size={17} /> New research project
-          </button>
-          <a
-            className="btn btn-ghost btn-lg"
-            href="#/examples"
-            onClick={(e) => {
-              e.preventDefault()
-              navigate('/examples')
-            }}
-          >
-            See 20 worked examples
-          </a>
-        </div>
+      {/* ── Hero — full pitch for strangers, a slim band for returners ── */}
+      {returning ? (
+        <section className="hero hero-compact">
+          <p className="hero-kicker">The shippable research workspace</p>
+          <div className="hero-compact-row">
+            <h1 className="hero-title hero-title-compact">
+              Pick up the thread<span className="grad-text">.</span>
+            </h1>
+            <div className="hero-cta hero-cta-compact">
+              <button className="btn btn-fill" onClick={() => setShowNew(true)}>
+                <Icon name="plus" size={15} /> New research project
+              </button>
+              <a
+                className="btn btn-ghost"
+                href="#/examples"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate('/examples')
+                }}
+              >
+                Worked examples
+              </a>
+              <button className="btn btn-ghost" onClick={() => setShowTour(true)}>
+                ▶ Tour
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="hero">
+          <div className="hero-thread" aria-hidden="true" />
+          <p className="hero-kicker">The shippable research workspace</p>
+          <h1 className="hero-title">
+            Conduct research, <span className="grad-text">A&nbsp;→&nbsp;Z</span>
+          </h1>
+          <p className="hero-sub">
+            One connected throughline — discover the literature, frame the question, build the
+            measures, collect and analyze the data, then write and place the paper. Every step
+            carries the last one forward.
+          </p>
+          <div className="hero-cta">
+            <button className="btn btn-fill btn-lg" onClick={() => setShowNew(true)}>
+              <Icon name="plus" size={17} /> New research project
+            </button>
+            <a
+              className="btn btn-ghost btn-lg"
+              href="#/examples"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate('/examples')
+              }}
+            >
+              See 20 worked examples
+            </a>
+          </div>
 
-        {/* muted living preview; click for the full narrated tour */}
-        <button
-          className="hero-tour"
-          onClick={() => setShowTour(true)}
-          aria-label="Watch the 90-second narrated tour"
-        >
-          <video
-            className="hero-tour-video"
-            src="/tour.mp4"
-            poster="/tour-poster.jpg"
-            muted
-            loop
-            playsInline
-            autoPlay={!prefersReducedMotion()}
-            preload="metadata"
-            aria-hidden="true"
-            tabIndex={-1}
-          />
-          <span className="hero-tour-overlay">
-            <span className="hero-tour-play">▶</span>
-            Watch the 90-second tour — with sound
-          </span>
-        </button>
-      </section>
+          {/* muted living preview; click for the full narrated tour */}
+          <button
+            className="hero-tour"
+            onClick={() => setShowTour(true)}
+            aria-label="Watch the 90-second narrated tour"
+          >
+            <video
+              className="hero-tour-video"
+              src="/tour.mp4"
+              poster="/tour-poster.jpg"
+              muted
+              loop
+              playsInline
+              autoPlay={!prefersReducedMotion()}
+              preload="metadata"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            <span className="hero-tour-overlay">
+              <span className="hero-tour-play">▶</span>
+              Watch the 90-second tour — with sound
+            </span>
+          </button>
+        </section>
+      )}
 
       {/* ── Projects shelf ────────────────────────────────────────── */}
       <section className="shelf">
@@ -232,7 +265,7 @@ function ProjectCard({
       {/* the project's own mini-spine: seven hue segments, status-aware */}
       <div className="project-spine" aria-label={`${pct}% complete`} role="img">
         {STAGES.map((s) => {
-          const st = project.stages[s.id]?.status ?? 'todo'
+          const st = derivedStatus(project, s.id)
           const cur = s.id === project.current
           return (
             <span

@@ -372,6 +372,19 @@
   flex-wrap: wrap;
 }
 
+/* returning users get a slim band, not the pitch — the work leads */
+.hero-compact { padding: 38px 0 6px; text-align: left; }
+.hero-compact .hero-kicker { margin-bottom: 8px; }
+.hero-compact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.hero-title-compact { font-size: clamp(26px, 4vw, 40px); margin: 0; }
+.hero-cta-compact { justify-content: flex-start; }
+
 /* ── Hero tour video (muted preview → click for sound) ─────────────────── */
 .hero-tour {
   display: block;
@@ -874,9 +887,20 @@
   font-size: 15px;
   margin-bottom: 24px;
 }
+.ws-q-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+}
+.ws-q-label-sub { color: var(--ink-mute); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .ws-body {
   display: grid;
-  grid-template-columns: var(--rail-w) 1fr;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
   gap: 30px;
   align-items: start;
 }
@@ -1043,10 +1067,12 @@
 }
 .stage-grid {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  /* minmax(0,…): grid items otherwise refuse to shrink below content width */
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: 26px;
   align-items: start;
 }
+.stage-main { min-width: 0; }
 .stage-h2 {
   font-family: var(--serif);
   font-weight: 600;
@@ -1143,8 +1169,8 @@
 }
 .side-carry svg { color: var(--accent); flex: 0 0 auto; }
 .side-carry-sub { font-size: 12.5px; color: var(--ink-mute); margin: 8px 0 0; }
-.status-btns { display: flex; gap: 8px; }
-.status-btns .btn { flex: 1; padding: 9px 8px; }
+.side-status-line { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); margin: 0 0 10px; }
+.side-card > .btn { width: 100%; }
 
 /* ── Discover workspace (real corpus search) ───────────────────────────── */
 .disc-state {
@@ -1249,6 +1275,10 @@
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   padding: 9px 10px;
+  /* min-width:0 is load-bearing: as a flex item the select's automatic minimum
+     is its widest <option> (~670px for 167 constructs), and min beats max —
+     without this the whole mobile layout viewport blows out to ~715px. */
+  min-width: 0;
   max-width: 220px;
   cursor: pointer;
 }
@@ -1651,7 +1681,7 @@
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
-  .ws-body { grid-template-columns: 1fr; gap: 20px; }
+  .ws-body { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .spine {
     position: static;
     overflow-x: auto;
@@ -1661,9 +1691,31 @@
   .spine-list { display: flex; gap: 6px; }
   .spine-list::before,
   .spine-list::after { display: none; }
-  .spine-meta { display: none; }
-  .spine-node-btn { flex-direction: column; padding: 6px; }
-  .stage-grid { grid-template-columns: 1fr; }
+  /* seven unlabeled dots is memory-test navigation — keep the titles */
+  .spine-meta { display: block; text-align: center; }
+  .spine-title { font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+  .spine-brief { display: none; }
+  .spine-node-btn { flex-direction: column; gap: 4px; padding: 8px 6px; min-height: 48px; }
+  .stage-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+  /* decorative bleeds must never widen the layout viewport */
+  .stage::before { left: -10px; right: -10px; }
+  .stage-head::before { right: 0; font-size: 92px; }
+}
+
+/* tap-target floor — phones and any coarse pointer (WCAG 2.5.8 / 44px) */
+@media (max-width: 860px), (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 40px; }
+  .icon-btn { width: 40px; height: 40px; }
+  .anz-tab,
+  .anz-pick { min-height: 40px; }
+  .disc-chip { padding: 8px 12px; font-size: 12px; }
+  .disc-oa { min-height: 44px; }
+  .disc-oa input { width: 19px; height: 19px; }
+  .disc-select { min-height: 44px; }
 }
 /* ── Worked examples (case studies) ────────────────────────────────────── */
 .route-loading { padding: 80px 0; text-align: center; color: var(--ink-mute); font-size: 14px; }

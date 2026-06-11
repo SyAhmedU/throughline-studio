@@ -68,7 +68,9 @@
 
   --ink: #211826;
   --ink-2: #4d3f57;
-  --ink-mute: #847490;
+  /* ≥4.5:1 on --bg/--surface (the old #847490 measured ~4.0:1 — AA fail at
+     the 11–13px sizes this token is used on) */
+  --ink-mute: #6f5f7d;
 
   --accent: #d62f63;
   --accent-2: #7a54e0;
@@ -83,6 +85,13 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Final guard: decorative bleed (stage auroras, ghost numerals) must never
+   expand the layout viewport on phones. `clip` — not `hidden` — so no scroll
+   container is created and position:sticky keeps working. On html too: body's
+   clip can't catch absolutely-positioned boxes anchored to the initial
+   containing block. */
+html, body { overflow-x: clip; }
 
 html, body, #root { height: 100%; }
 

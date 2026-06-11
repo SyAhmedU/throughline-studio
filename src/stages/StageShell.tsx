@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
-import { readingList } from '../lib/corpus'
+import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { STAGES, stageDef } from '../lib/stages'
 import { setStageNotes, setStageStatus } from '../lib/store'
 import type { Project, StageId, StageStatus } from '../lib/types'
@@ -51,7 +51,8 @@ export function StageShell({
 
   const idx = STAGES.findIndex((s) => s.id === stageId)
   const next = STAGES[idx + 1]
-  const carrySub = carryLabel(project, stageId)
+  const carrySub = carrySummary(project, stageId)
+  const shown = derivedStatus(project, stageId)
 
   const Body =
     stageId === 'discover'
@@ -74,13 +75,15 @@ export function StageShell({
         <div className="stage-eyebrow">
           <span className="stage-num">{String(def.n).padStart(2, '0')}</span>
           <span className="stage-brief-tag">{def.brief}</span>
-          <StatusPill status={state.status} />
+          <StatusPill status={shown} />
         </div>
         <h1 id="stage-title" className="stage-title">
           <Icon name={def.id} size={26} /> {def.title}
           <span className="stage-verb">— {def.verb.toLowerCase()}</span>
         </h1>
-        <p className="stage-blurb">{def.blurb}</p>
+        {/* the explainer earns its place only on a first visit — once the stage
+            has artifacts the user knows what it's for, so reclaim the space */}
+        {shown === 'todo' && <p className="stage-blurb">{def.blurb}</p>}
       </header>
 
       <div className="stage-grid">
@@ -111,20 +114,25 @@ export function StageShell({
 
           <div className="side-card">
             <h3 className="side-h3">Stage status</h3>
-            <div className="status-btns">
-              <button
-                className={`btn btn-ghost ${state.status === 'active' ? 'is-on' : ''}`}
-                onClick={() => onChange(setStageStatus(project, stageId, 'active'))}
-              >
-                <Icon name="dot" size={14} /> Working
-              </button>
-              <button
-                className={`btn btn-fill ${state.status === 'done' ? 'is-on' : ''}`}
-                onClick={() => onChange(setStageStatus(project, stageId, 'done'))}
-              >
-                <Icon name="check" size={14} /> Done
-              </button>
-            </div>
+            {/* progress is read from the artifacts; only "done" is a judgment */}
+            <p className="side-status-line">
+              {shown === 'done'
+                ? 'Done'
+                : shown === 'active'
+                  ? carrySub
+                    ? `In progress — ${carrySub}`
+                    : 'In progress'
+                  : 'Nothing here yet — it updates itself as you work'}
+            </p>
+            <button
+              className={`btn ${state.status === 'done' ? 'btn-ghost' : 'btn-fill'}`}
+              onClick={() =>
+                onChange(setStageStatus(project, stageId, state.status === 'done' ? 'todo' : 'done'))
+              }
+            >
+              <Icon name={state.status === 'done' ? 'dot' : 'check'} size={14} />{' '}
+              {state.status === 'done' ? 'Reopen stage' : 'Mark done'}
+            </button>
           </div>
 
           {next && (
@@ -141,46 +149,4 @@ export function StageShell({
 function StatusPill({ status }: { status: StageStatus }) {
   const label = status === 'done' ? 'Done' : status === 'active' ? 'In progress' : 'Not started'
   return <span className={`status-pill is-${status}`}>{label}</span>
-}
-
-/** Sidebar sub-line showing what each stage has accumulated so far. */
-function carryLabel(p: Project, stageId: StageId): string | null {
-  const data = (s: StageId) => (p.stages[s]?.data || {}) as Record<string, unknown>
-  const count = (v: unknown) => (Array.isArray(v) ? v.length : 0)
-  switch (stageId) {
-    case 'discover': {
-      const n = readingList(p).length
-      return n ? `${n} ${n === 1 ? 'paper' : 'papers'} in the reading list` : null
-    }
-    case 'frame': {
-      const f = data('frame')
-      const hyps = count(f.hypotheses)
-      const parts = [f.theory ? '1 lens' : null, hyps ? `${hyps} hypotheses` : null].filter(Boolean)
-      return parts.length ? parts.join(' · ') : null
-    }
-    case 'measure': {
-      const n = count(data('measure').scales)
-      return n ? `${n} ${n === 1 ? 'scale' : 'scales'} in the instrument` : null
-    }
-    case 'collect': {
-      const s = data('collect').status as string | undefined
-      return s && s !== 'Not started' ? s.toLowerCase() : null
-    }
-    case 'analyze': {
-      const n = count(data('analyze').captures)
-      return n ? `${n} ${n === 1 ? 'result' : 'results'} captured` : null
-    }
-    case 'write': {
-      const w = data('write')
-      const filled = ['abstract', 'intro', 'methods', 'results', 'discussion'].filter(
-        (k) => typeof w[k] === 'string' && (w[k] as string).trim(),
-      ).length
-      return filled ? `${filled} ${filled === 1 ? 'section' : 'sections'} drafted` : null
-    }
-    case 'publish': {
-      const pb = data('publish')
-      const done = ['preregistered', 'dataShared', 'materialsShared', 'openAccess'].filter((k) => pb[k]).length
-      return done ? `${done}/4 open-science checks` : null
-    }
-  }
 }

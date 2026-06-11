@@ -82,12 +82,16 @@ export function ProjectView({
         {project.field && <span className="ws-field">{project.field}</span>}
       </div>
 
+      {/* a real, visible label — placeholders vanish the moment you type */}
+      <label className="ws-q-label" htmlFor="ws-question">
+        Research question <span className="ws-q-label-sub">— carried into every tool as the topic</span>
+      </label>
       <input
+        id="ws-question"
         className="ws-question"
         value={project.question}
         onChange={(e) => patch((p) => ({ ...p, question: e.target.value }))}
-        placeholder="Your research question — carried into every tool as the topic…"
-        aria-label="Research question"
+        placeholder="e.g. Does servant leadership raise team engagement?"
       />
 
       <div className="ws-body">
