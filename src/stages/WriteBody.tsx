@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import type { SavedScale } from '../lib/scales'
-import { deepLink, stageDef } from '../lib/stages'
+import { deepLink, stageDef, toolLabel } from '../lib/stages'
 import type { SavedTheory } from '../lib/theories'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
@@ -175,7 +175,7 @@ export function WriteBody({
         <div className="disc-fulltools-row">
           {tools.map((t) => (
             <a key={t.name} className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
-              {t.name} <Icon name="external" size={12} />
+              {toolLabel(t)} <Icon name="external" size={12} />
             </a>
           ))}
         </div>

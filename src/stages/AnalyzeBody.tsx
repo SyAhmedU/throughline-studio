@@ -24,7 +24,7 @@ import {
   toDelimited,
   type Dataset,
 } from '../lib/dataset'
-import { deepLink, stageDef } from '../lib/stages'
+import { deepLink, stageDef, toolLabel } from '../lib/stages'
 import {
   correlationMatrix,
   cronbach,
@@ -793,7 +793,7 @@ function FullTools({ topic, compact }: { topic: string; compact?: boolean }) {
       </span>
       <div className="disc-fulltools-row">
         <a className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
-          {t.name} <Icon name="external" size={12} />
+          {toolLabel(t)} <Icon name="external" size={12} />
         </a>
       </div>
     </div>
