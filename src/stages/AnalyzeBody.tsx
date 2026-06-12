@@ -199,7 +199,7 @@ export function AnalyzeBody({
     const cats = categoricalVars(ds)
     setSel({
       corr: nums.slice(0, 8),
-      rel: nums.slice(0, 6),
+      rel: scaleFamily(nums),
       ttDV: nums[0] ?? '',
       ttG: cats[0] ?? '',
       anDV: nums[0] ?? '',
@@ -257,7 +257,7 @@ export function AnalyzeBody({
     lines.push(
       '',
       '---',
-      'This log documents every analysis captured in the Studio. Share it alongside the data so each result can be re-derived.',
+      'This log contains the analyses the author chose to capture — an author-curated selection, not an exhaustive record of every test run in the session. Share it alongside the data so each result can be re-derived.',
     )
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
     const a = document.createElement('a')
@@ -583,7 +583,7 @@ function Reliability({ ds, nums, sel, setSel, onCapture }: SubProps) {
           </div>
           <p className="anz-fineprint">* ω is a single-factor approximation — run a factor model in ToolsScope for a full estimate.</p>
           <ApaLine
-            text={`Internal consistency was acceptable, Cronbach's α = ${rfmt(rel.alpha)} for the ${rel.k}-item scale (N = ${rel.n}).`}
+            text={`Internal consistency was ${alphaQualifier(rel.alpha)}, Cronbach's α = ${rfmt(rel.alpha)} for the ${rel.k}-item scale (N = ${rel.n}).`}
             title="Reliability (Cronbach's α)"
             onCapture={onCapture}
           />
@@ -591,6 +591,32 @@ function Reliability({ ds, nums, sel, setSel, onCapture }: SubProps) {
       )}
     </>
   )
+}
+
+/** The adjective must follow the value (George & Mallery 2003 bands) — a fixed
+ *  "acceptable" once shipped α = .21 into auto-APA prose. */
+function alphaQualifier(a: number): string {
+  if (a >= 0.9) return 'excellent'
+  if (a >= 0.8) return 'good'
+  if (a >= 0.7) return 'acceptable'
+  if (a >= 0.6) return 'questionable'
+  return 'poor'
+}
+
+/** Default reliability selection: the largest family of columns sharing an
+ *  alphabetic stem (eng1…eng5), not every numeric column — α over unrelated
+ *  variables (age + items) is a novice trap. Falls back to the first six. */
+function scaleFamily(nums: string[]): string[] {
+  const fams = new Map<string, string[]>()
+  for (const v of nums) {
+    const m = v.match(/^(.*?)[_\s.-]?\d+$/)
+    if (!m || !m[1]) continue
+    const stem = m[1].toLowerCase()
+    fams.set(stem, [...(fams.get(stem) || []), v])
+  }
+  let best: string[] = []
+  for (const f of fams.values()) if (f.length > best.length) best = f
+  return best.length >= 2 ? best : nums.slice(0, 6)
 }
 
 function TTest({ ds, nums, cats, sel, setSel, onCapture }: SubProps) {

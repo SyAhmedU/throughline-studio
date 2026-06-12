@@ -68,6 +68,20 @@ export function ProjectView({
     navigate(`/p/${project!.id}/${id}`)
   }
 
+  /** Download the whole project as a JSON backup — the only copy lives in this
+   *  browser while cloud sync is down, so give users a way out (import lives on
+   *  the hub's projects shelf). */
+  function exportProject() {
+    const p = project!
+    const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    const slug = (p.title || 'project').replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '-').toLowerCase()
+    a.download = `${slug || 'project'}.throughline.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   return (
     <div className="workspace">
       <div className="ws-header">
@@ -81,6 +95,13 @@ export function ProjectView({
           aria-label="Project title"
         />
         {project.field && <span className="ws-field">{project.field}</span>}
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={exportProject}
+          title="Download this project as a JSON backup — restore it via Import on the projects shelf"
+        >
+          <Icon name="publish" size={14} /> Export
+        </button>
       </div>
 
       {/* a real, visible label — placeholders vanish the moment you type */}

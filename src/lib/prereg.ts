@@ -21,6 +21,15 @@ export interface PreregPlans {
   preregText?: string
   /** epoch ms of the lock — the timestamp that makes it a preregistration */
   preregLockedAt?: number
+  /** immutable trail: every earlier lock is pushed here on unlock, never
+   *  edited — an unlock-relock cycle must not be able to erase its own past */
+  preregHistory?: PreregVersion[]
+}
+
+export interface PreregVersion {
+  text: string
+  lockedAt: number
+  unlockedAt: number
 }
 
 interface FrameData {

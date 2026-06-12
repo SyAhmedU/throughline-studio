@@ -178,6 +178,25 @@ export function DiscoverBody({
       .map((x) => x.c)
   }, [corpus, project.title, topic])
 
+  // Start the user somewhere relevant: when the project arrived with a topic
+  // and the filters are untouched, pre-apply the top title-matched construct
+  // ONCE — visibly noted, one click to clear. Without this the default corpus
+  // order looks unrelated to the topic (persona audit, 2026-06-12).
+  const [autoCode, setAutoCode] = useState<string | null>(null)
+  const autoTried = useRef(false)
+  useEffect(() => {
+    if (autoTried.current || !corpus) return
+    if (filters.query || filters.constructCode) {
+      autoTried.current = true
+      return
+    }
+    if (suggestedConstructs.length === 0) return
+    autoTried.current = true
+    const top = suggestedConstructs[0]
+    setAutoCode(top.code)
+    setFilters((f) => ({ ...f, constructCode: top.code }))
+  }, [corpus, suggestedConstructs, filters.query, filters.constructCode])
+
   const list = readingList(project)
   const inList = useMemo(() => new Set(list.map((p) => p.id)), [list])
 
@@ -436,10 +455,27 @@ export function DiscoverBody({
         </div>
       )}
 
+      {autoCode && filters.constructCode === autoCode && (
+        <p className="disc-count">
+          Filtered to <strong>{corpus.codeToName.get(autoCode)}</strong> — matched from your title.{' '}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setAutoCode(null)
+              setFilters((f) => ({ ...f, constructCode: '' }))
+            }}
+          >
+            Clear — browse the whole corpus
+          </button>
+        </p>
+      )}
       <p className="disc-count">
         {results.length.toLocaleString()} {results.length === 1 ? 'match' : 'matches'}
         {filters.constructCode && corpus.codeToName.get(filters.constructCode)
           ? ` in ${corpus.codeToName.get(filters.constructCode)}`
+          : ''}
+        {liveOn && liveStatus === 'ready' && livePapers.length > 0
+          ? ` in the hand-coded corpus — plus ${livePapers.length} live above`
           : ''}
       </p>
 
@@ -514,7 +550,30 @@ export function DiscoverBody({
           )
         })}
         {results.length === 0 && (
-          <p className="disc-empty">No matches. Try a broader term or clear the construct filter.</p>
+          <div className="disc-empty">
+            <p>
+              No matches in the hand-coded corpus. Its coverage is OB / management — for other fields this may just be
+              the corpus's edge, not the literature's.
+            </p>
+            <div className="disc-fulltools-row">
+              {!liveOn && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setLiveOn(true)}>
+                  ⚡ Search the newest papers live (OpenAlex)
+                </button>
+              )}
+              {!recentOn && (
+                <button className="btn btn-ghost btn-sm" onClick={() => toggleRecent(true)}>
+                  ↑ Load the recent tier (2024→)
+                </button>
+              )}
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setFilters((f) => ({ ...f, query: '', constructCode: '' }))}
+              >
+                Clear search
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

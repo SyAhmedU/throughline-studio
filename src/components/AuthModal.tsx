@@ -98,6 +98,10 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
 
 function message(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e)
+  // A dead/unreachable accounts backend must read as "temporarily down", not
+  // as a raw fetch error the user blames themselves for.
+  if (/failed to fetch|networkerror|name_not_resolved|load failed|fetch failed/i.test(m))
+    return "Can't reach the accounts server right now — sign-in is temporarily unavailable. Your work is saved in this browser, and the app works fully without an account."
   if (/redirect|allowed|url/i.test(m)) return `${m} — add this site's URL to your Supabase Auth → URL Configuration.`
   return m
 }

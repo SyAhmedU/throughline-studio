@@ -47,7 +47,7 @@ export function WriteBody({
   topic: string
 }) {
   const [form, update] = useStageData<WriteData>(project, 'write', onChange)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<false | 'done' | 'empty'>(false)
   const [ai, setAi] = useState<'idle' | 'loading' | 'unavailable' | 'error'>('idle')
 
   // project artifacts (all real, already in the project)
@@ -79,9 +79,17 @@ export function WriteBody({
   }
 
   function copyAll() {
+    // An empty assemble must not report success — a novice will believe they
+    // have a draft (audit finding, 2026-06-12).
+    const hasContent = !!(form.abstract || form.intro || form.methods || form.results || form.discussion || form.references)
+    if (!hasContent) {
+      setCopied('empty')
+      window.setTimeout(() => setCopied(false), 3200)
+      return
+    }
     navigator.clipboard?.writeText(assemble()).then(
       () => {
-        setCopied(true)
+        setCopied('done')
         window.setTimeout(() => setCopied(false), 1600)
       },
       () => {},
@@ -103,8 +111,16 @@ export function WriteBody({
       setAi(res.reason === 'unavailable' ? 'unavailable' : 'error')
       return
     }
-    setAi('idle')
-    if (res.text) update({ abstract: res.text })
+    // The shared RF fallback returns { result } which may be a JSON object —
+    // dig the abstract out of it; a 200 with nothing usable must surface as an
+    // error, never as a silent no-op (audit finding, 2026-06-12).
+    const text = res.text ?? extractDraftText(res.data)
+    if (text) {
+      update({ abstract: text })
+      setAi('idle')
+    } else {
+      setAi('error')
+    }
   }
 
   const tools = stageDef('write').tools
@@ -151,8 +167,11 @@ export function WriteBody({
 
       <div className="bld-assemble">
         <button className="btn btn-fill" onClick={copyAll}>
-          <Icon name={copied ? 'check' : 'write'} size={15} /> {copied ? 'Copied draft' : 'Assemble & copy full draft'}
+          <Icon name={copied === 'done' ? 'check' : 'write'} size={15} /> {copied === 'done' ? 'Copied draft' : 'Assemble & copy full draft'}
         </button>
+        {copied === 'empty' && (
+          <p className="anz-warn">The draft is empty — nothing was copied. Write or pull the sections above first, then assemble.</p>
+        )}
         <div className="disc-fulltools-row">
           {tools.map((t) => (
             <a key={t.name} className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
@@ -163,6 +182,21 @@ export function WriteBody({
       </div>
     </div>
   )
+}
+
+/** The shared RF backend returns { result: <parsed JSON> } — when the model
+ *  wraps the abstract in an object, dig the first plausible string out instead
+ *  of dropping a successful response on the floor. */
+function extractDraftText(data: unknown): string | null {
+  if (typeof data === 'string') return data.trim() || null
+  if (!data || typeof data !== 'object') return null
+  const obj = data as Record<string, unknown>
+  for (const k of ['abstract', 'text', 'draft', 'content', 'summary', 'result']) {
+    const v = obj[k]
+    if (typeof v === 'string' && v.trim().length > 40) return v.trim()
+  }
+  const first = Object.values(obj).find((v) => typeof v === 'string' && v.trim().length > 40)
+  return typeof first === 'string' ? first.trim() : null
 }
 
 // ── draft assemblers (real project data only) ───────────────────────────────

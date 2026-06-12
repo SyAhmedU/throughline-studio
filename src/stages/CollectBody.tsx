@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { generate } from '../lib/api'
 import { nForCorr, nPerGroup } from '../lib/power'
-import { buildPrereg, fmtLockDate, planValues } from '../lib/prereg'
+import { buildPrereg, fmtLockDate, planValues, type PreregVersion } from '../lib/prereg'
 import type { SavedScale } from '../lib/scales'
 import { ReadingFacets } from '../components/ReadingFacets'
 import { deepLink, stageDef } from '../lib/stages'
@@ -39,6 +39,7 @@ interface CollectData extends Record<string, unknown> {
   exclusions?: string
   preregText?: string
   preregLockedAt?: number
+  preregHistory?: PreregVersion[]
   // ethics & design checks
   ethicsApproval?: boolean
   dataProtection?: boolean
@@ -149,7 +150,17 @@ export function CollectBody({
     const sure = window.confirm(
       'Unlock the preregistration?\n\nA preregistration only means something if it stays frozen before data collection. If you have already collected data, revise transparently and report the change as a deviation in the write-up.',
     )
-    if (sure) update({ preregText: undefined, preregLockedAt: undefined })
+    // The unlock keeps the past on record: the frozen text + both timestamps
+    // move into an append-only history, so a relock can never erase v1.
+    if (sure)
+      update({
+        preregText: undefined,
+        preregLockedAt: undefined,
+        preregHistory: [
+          ...(form.preregHistory || []),
+          { text: form.preregText!, lockedAt: form.preregLockedAt!, unlockedAt: Date.now() },
+        ],
+      })
   }
   function copyPrereg() {
     const text = form.preregText || buildPrereg(project, plans)
@@ -402,6 +413,18 @@ export function CollectBody({
               </button>
             </div>
           </>
+        )}
+        {(form.preregHistory?.length || 0) > 0 && (
+          <p className="anz-fineprint">
+            Version trail:{' '}
+            {form.preregHistory!
+              .map((h, i) => `v${i + 1} locked ${fmtLockDate(h.lockedAt)}, unlocked ${fmtLockDate(h.unlockedAt)}`)
+              .join(' · ')}
+            {locked
+              ? ` · v${form.preregHistory!.length + 1} (current) locked ${fmtLockDate(form.preregLockedAt!)}`
+              : ' — currently unlocked'}
+            . Earlier versions stay on record; report what changed as a deviation.
+          </p>
         )}
       </section>
 

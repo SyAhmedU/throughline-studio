@@ -10,7 +10,7 @@ import { VideoLightbox } from '../components/VideoLightbox'
 import { derivedStatus } from '../lib/artifacts'
 import { navigate } from '../lib/router'
 import { STAGES } from '../lib/stages'
-import { createProject, deleteProject, loadProjects, progress, subscribe } from '../lib/store'
+import { createProject, deleteProject, loadProjects, progress, saveProject, subscribe } from '../lib/store'
 import type { Project } from '../lib/types'
 
 export function Hub() {
@@ -29,6 +29,23 @@ export function Hub() {
   function start(title: string, field: string) {
     const p = createProject(title, field)
     navigate(`/p/${p.id}`)
+  }
+
+  /** Restore a project from the JSON backup the workspace header exports —
+   *  the escape hatch while cloud sync is down (projects otherwise live only
+   *  in one browser's localStorage). */
+  async function importFile(f: File) {
+    try {
+      const p = JSON.parse(await f.text()) as Project
+      if (!p || typeof p !== 'object' || !p.id || !p.title || !p.stages) {
+        throw new Error('that is not a Throughline Studio project file')
+      }
+      saveProject(p)
+      refresh()
+      navigate(`/p/${p.id}`)
+    } catch (e) {
+      alert(`Couldn't import — ${(e as Error).message}. Use Export in a project's header to create a valid backup.`)
+    }
   }
 
   // a returning user has projects: lead with the work, retire the pitch
@@ -122,6 +139,19 @@ export function Hub() {
       <section className="shelf">
         <div className="shelf-head">
           <h2 className="section-h2">Your projects</h2>
+          <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }} title="Restore a project from a JSON backup exported from its workspace header">
+            <Icon name="arrow" size={14} /> Import
+            <input
+              type="file"
+              accept=".json,application/json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (f) void importFile(f)
+              }}
+            />
+          </label>
           {projects.length > 0 && (
             <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(true)}>
               <Icon name="plus" size={14} /> New
