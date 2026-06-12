@@ -197,6 +197,7 @@ export function makeDemo(): Dataset {
 
   const variables: Variable[] = [
     { name: 'group', type: 'categorical' },
+    { name: 'condition', type: 'categorical' }, // 2 levels so the t-test demos out of the box
     { name: 'age', type: 'numeric' },
     { name: 'eng1', type: 'numeric' },
     { name: 'eng2', type: 'numeric' },
@@ -209,11 +210,14 @@ export function makeDemo(): Dataset {
   const rows: Cell[][] = []
   for (let i = 0; i < 120; i++) {
     const group = groups[i % 3]
+    const condition = i % 2 === 0 ? 'control' : 'treatment'
     const theta = gauss() // latent engagement
     const eng = [0, 0, 0, 0, 0].map(() => clampLikert(4.2 + 1.0 * theta + 0.7 * gauss()))
-    const satisfaction = clampLikert(3.9 + 0.6 * theta + 1.3 * groupEffect[group] + 0.7 * gauss())
+    const satisfaction = clampLikert(
+      3.9 + 0.6 * theta + 1.3 * groupEffect[group] + (condition === 'treatment' ? 0.5 : 0) + 0.7 * gauss(),
+    )
     const age = Math.max(18, Math.min(64, Math.round(34 + 9 * gauss())))
-    rows.push([group, age, eng[0], eng[1], eng[2], eng[3], eng[4], satisfaction])
+    rows.push([group, condition, age, eng[0], eng[1], eng[2], eng[3], eng[4], satisfaction])
   }
 
   return { name: 'Simulated demo — work engagement (N=120)', variables, rows, simulated: true }

@@ -206,9 +206,11 @@ export function AnalyzeBody({
       corr: nums.slice(0, 8),
       rel: scaleFamily(nums),
       ttDV: nums[0] ?? '',
-      ttG: cats[0] ?? '',
+      // the t-test needs exactly 2 levels and ANOVA wants 3+ — defaulting both
+      // to cats[0] left one of them on a factor it can't use
+      ttG: cats.find((c) => levelsOf(ds, c).length === 2) ?? cats[0] ?? '',
       anDV: nums[0] ?? '',
-      anF: cats[0] ?? '',
+      anF: cats.find((c) => levelsOf(ds, c).length >= 3) ?? cats[0] ?? '',
     })
   }, [ds])
 

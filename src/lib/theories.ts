@@ -65,6 +65,14 @@ const STOP = new Set([
   'the', 'and', 'for', 'with', 'does', 'how', 'what', 'why', 'between', 'among',
   'effect', 'effects', 'impact', 'role', 'study', 'research', 'employee', 'employees',
   'organization', 'organizations', 'organizational', 'work', 'workplace', 'theory',
+  // methods/relation words describe the hypothesis shape, not its content —
+  // "mediated by X" once handed Consumer Culture Theory a construct hit (B21)
+  'mediated', 'mediates', 'mediation', 'mediator', 'mediators',
+  'moderated', 'moderates', 'moderation', 'moderator', 'moderators',
+  'reduce', 'reduces', 'reduced', 'increase', 'increases', 'increased',
+  'decrease', 'decreases', 'decreased', 'relationship', 'relationships',
+  'influence', 'influences', 'influenced', 'association', 'associations',
+  'predict', 'predicts', 'predicted',
 ])
 
 export function suggestTheories(all: Theory[], phrases: string[]): Theory[] {
@@ -86,8 +94,11 @@ export function suggestTheories(all: Theory[], phrases: string[]): Theory[] {
       let score = 0
       let matched = 0
       for (const tok of tokens) {
-        if (constructs.includes(tok)) score += 3
-        else if (name.includes(tok)) score += 2
+        // a token IN the theory's name is the strongest signal there is — it
+        // must clear the score floor on its own ("Job Burnout" for a burnout
+        // question was being dropped while construct-substring hits survived)
+        if (name.includes(tok)) score += 4
+        else if (constructs.includes(tok)) score += 3
         else if (keywords.includes(tok)) score += 2
         else if (oneLiner.includes(tok)) score += 1
         else continue
