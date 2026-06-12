@@ -20,6 +20,7 @@ import {
   type Scale,
   type ScaleItemsMap,
 } from '../lib/scales'
+import { ReadingFacets } from '../components/ReadingFacets'
 import { deepLink, stageDef } from '../lib/stages'
 import { setStageData } from '../lib/store'
 import type { Project } from '../lib/types'
@@ -270,6 +271,18 @@ export function MeasureBody({
               ))}
             </section>
           )}
+
+          {/* measures the reading list used — click to search the catalogue */}
+          <ReadingFacets
+            project={project}
+            keys={['measures', 'constructs']}
+            lead="Instruments and constructs your reading-list papers measured with — click a measure to search the catalogue for it."
+            onUse={{
+              measures: (text) => setQuery(text),
+              constructs: (text) => setQuery(text),
+            }}
+            useTitle="search the scale catalogue below"
+          />
 
           <div className="disc-controls">
             <div className="disc-search">

@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { ReadingFacets } from '../components/ReadingFacets'
 import {
   getAbstract,
   getRecentAbstract,
@@ -298,6 +299,15 @@ export function DiscoverBody({
       )}
       {showList && list.length === 0 && (
         <p className="disc-saved-empty">Add papers below to build the reading list this stage carries forward.</p>
+      )}
+
+      {/* what the reading list uses — stored AI dissections, all eight streams */}
+      {list.length > 0 && (
+        <ReadingFacets
+          project={project}
+          keys={['theory', 'constructs', 'design', 'sample', 'measures', 'analysis', 'software', 'data']}
+          lead="What these papers actually used — theories, constructs, designs, samples, measures, analyses, software, data — aggregated from their stored dissections. Each stream resurfaces on its own stage."
+        />
       )}
 
       {/* controls */}

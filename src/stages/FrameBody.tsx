@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { ReadingFacets } from '../components/ReadingFacets'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import { fmtLockDate, preregLock } from '../lib/prereg'
@@ -323,6 +324,21 @@ export function FrameBody({
           </Field>
         </div>
       </section>
+
+      {/* what the reading list grounds: theories to consider, constructs in play */}
+      <ReadingFacets
+        project={project}
+        keys={['theory', 'constructs']}
+        lead="Theories and constructs your reading-list papers actually used — click a theory to search it as your lens."
+        onUse={{
+          theory: (text) => {
+            set({ theory: null })
+            setTq(text)
+            ensureTheories()
+          },
+        }}
+        useTitle="search it in the theory catalogue below"
+      />
 
       {/* theoretical lens */}
       <section className="bld-section">

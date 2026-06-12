@@ -2024,3 +2024,26 @@
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ── ReadingFacets — "From your reading list" chips (stage-shared) ──
+   Solid border = verbatim-verified item; dashed = unverified (evidence not
+   found in the abstract). Actionable chips pick up the stage hue on hover. */
+.rfx-facet { margin: 12px 0 0; }
+.rfx-facet-label { display: block; margin: 0 0 6px; }
+.rfx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rfx-chip {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  line-height: 1.5;
+}
+.rfx-unverified { border-style: dashed; opacity: 0.75; }
+.rfx-count { font-size: 11px; font-weight: 700; color: var(--accent); margin-left: 5px; }
+button.rfx-chip { cursor: pointer; transition: color 0.16s var(--ease), border-color 0.16s var(--ease); }
+button.rfx-chip:hover { color: var(--accent); border-color: var(--accent); }
+.rfx-more { border-style: dotted; color: var(--ink-3, var(--ink-2)); }

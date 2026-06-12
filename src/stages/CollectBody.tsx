@@ -13,6 +13,7 @@ import { generate } from '../lib/api'
 import { nForCorr, nPerGroup } from '../lib/power'
 import { buildPrereg, fmtLockDate, planValues } from '../lib/prereg'
 import type { SavedScale } from '../lib/scales'
+import { ReadingFacets } from '../components/ReadingFacets'
 import { deepLink, stageDef } from '../lib/stages'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
@@ -470,6 +471,13 @@ export function CollectBody({
           </Field>
         </div>
       </section>
+
+      {/* who comparable studies sampled, and what data they collected */}
+      <ReadingFacets
+        project={project}
+        keys={['sample', 'data']}
+        lead="Samples and data types your reading-list papers worked with — context for your own sampling plan, not a target."
+      />
 
       <div className="disc-fulltools">
         <span className="disc-fulltools-label">Field it for real ↗</span>

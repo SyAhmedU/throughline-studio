@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { ReadingFacets } from '../components/ReadingFacets'
 import {
   categoricalVars,
   colsByName,
@@ -309,6 +310,12 @@ export function AnalyzeBody({
             Load simulated demo
           </button>
         </div>
+        {/* method precedent reads well BEFORE the data lands too */}
+        <ReadingFacets
+          project={project}
+          keys={['analysis', 'software']}
+          lead="Analyses and software your reading-list papers used — the methodological precedent for this design."
+        />
         <FullTools topic={topic} />
       </div>
     )
@@ -383,6 +390,13 @@ export function AnalyzeBody({
           </ul>
         </div>
       )}
+
+      {/* analyses + software the reading list used — method-precedent context */}
+      <ReadingFacets
+        project={project}
+        keys={['analysis', 'software']}
+        lead="Analyses and software your reading-list papers used — the methodological precedent for this design. Run the staples here; the deeper engines are one click away in ToolsScope."
+      />
 
       {/* analysis picker */}
       <div className="anz-tabs" role="tablist">
