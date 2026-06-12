@@ -98,6 +98,24 @@ export function suggestTheories(all: Theory[], phrases: string[]): Theory[] {
     .map((x) => x.t)
 }
 
+// ── Recent-corpus usage — real verbatim mention counts (2024→) ─────────────
+// TheoryScope's corpus-usage.json: how many of the Research Book's ~79.5K
+// recent papers literally name each theory (deterministic match, no AI).
+// Navigational signal only — always presented as machine-matched.
+const USAGE_URL = 'https://theoryscope.vercel.app/data/corpus-usage.json'
+
+export interface TheoryUsage { n: number }
+let usagePromise: Promise<Record<string, TheoryUsage>> | null = null
+export function loadTheoryUsage(): Promise<Record<string, TheoryUsage>> {
+  if (!usagePromise) {
+    usagePromise = fetch(USAGE_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && j.usage ? (j.usage as Record<string, TheoryUsage>) : {}))
+      .catch(() => ({}))
+  }
+  return usagePromise
+}
+
 export function theoryCitation(t: Theory): string {
   const k = t.keyStudy
   if (k?.authors) return `${k.authors} (${k.year ?? 'n.d.'}). ${k.title ?? ''}`.trim()

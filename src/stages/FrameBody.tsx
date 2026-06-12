@@ -17,12 +17,14 @@ import { deepLink, stageDef } from '../lib/stages'
 import { saveProject } from '../lib/store'
 import {
   loadTheories,
+  loadTheoryUsage,
   searchTheories,
   suggestTheories,
   theoryLink,
   toSavedTheory,
   type SavedTheory,
   type Theory,
+  type TheoryUsage,
 } from '../lib/theories'
 import type { Project } from '../lib/types'
 
@@ -101,6 +103,7 @@ export function FrameBody({
   const [tq, setTq] = useState('')
   const [theories, setTheories] = useState<Theory[] | null>(null)
   const [tStatus, setTStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [tUsage, setTUsage] = useState<Record<string, TheoryUsage>>({})
   function ensureTheories() {
     if (theories || tStatus === 'loading') return
     setTStatus('loading')
@@ -110,6 +113,16 @@ export function FrameBody({
         setTStatus('ready')
       })
       .catch(() => setTStatus('error'))
+    loadTheoryUsage().then(setTUsage)
+  }
+  const usageBadge = (slug: string) => {
+    const n = tUsage[slug]?.n
+    return n ? (
+      <span className="disc-chip" style={{ cursor: 'default' }}
+        title={`Named verbatim in ${n} recent papers (2024→) in the Research Book — machine-matched, verify`}>
+        ↑ {n} recent
+      </span>
+    ) : null
   }
   const results = theories ? searchTheories(theories, tq).slice(0, 12) : []
 
@@ -371,7 +384,7 @@ export function FrameBody({
                     <article key={t.slug} className="disc-card">
                       <div className="disc-card-main">
                         <h3 className="disc-title">
-                          {t.name} {t.acronym && <span className="disc-dim">({t.acronym})</span>}
+                          {t.name} {t.acronym && <span className="disc-dim">({t.acronym})</span>} {usageBadge(t.slug)}
                         </h3>
                         {t.oneLiner && <p className="bld-attached-line">{t.oneLiner}</p>}
                       </div>
@@ -404,7 +417,7 @@ export function FrameBody({
                   <article key={t.slug} className="disc-card">
                     <div className="disc-card-main">
                       <h3 className="disc-title">
-                        {t.name} {t.acronym && <span className="disc-dim">({t.acronym})</span>}
+                        {t.name} {t.acronym && <span className="disc-dim">({t.acronym})</span>} {usageBadge(t.slug)}
                       </h3>
                       <p className="disc-meta">
                         {t.originators && <span>{t.originators}</span>}

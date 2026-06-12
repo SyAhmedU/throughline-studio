@@ -45,6 +45,24 @@ export function loadScales(): Promise<Scale[]> {
   return promise
 }
 
+// ── Recent-corpus usage — real verbatim mention counts (2024→) ─────────────
+// ScaleScope's scale-usage.json: how many of the Research Book's ~79.5K recent
+// papers literally name each scale (deterministic match, no AI). Navigational
+// signal only — always presented as machine-matched.
+const USAGE_URL = 'https://scalescope.vercel.app/data/scale-usage.json'
+
+export interface ScaleUsage { n: number }
+let usagePromise: Promise<Record<string, ScaleUsage>> | null = null
+export function loadScaleUsage(): Promise<Record<string, ScaleUsage>> {
+  if (!usagePromise) {
+    usagePromise = fetch(USAGE_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => (j && j.usage ? (j.usage as Record<string, ScaleUsage>) : {}))
+      .catch(() => ({}))
+  }
+  return usagePromise
+}
+
 export function searchScales(all: Scale[], query: string, domain: string): Scale[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   return all.filter((s) => {

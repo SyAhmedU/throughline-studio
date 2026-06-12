@@ -13,12 +13,14 @@ import {
   domainsOf,
   loadScaleItems,
   loadScales,
+  loadScaleUsage,
   scaleLink,
   searchScales,
   toSavedScale,
   type SavedScale,
   type Scale,
   type ScaleItemsMap,
+  type ScaleUsage,
 } from '../lib/scales'
 import { ReadingFacets } from '../components/ReadingFacets'
 import { deepLink, stageDef } from '../lib/stages'
@@ -127,16 +129,27 @@ export function MeasureBody({
   const [domain, setDomain] = useState('')
   const [limit, setLimit] = useState(PAGE)
 
+  const [usage, setUsage] = useState<Record<string, ScaleUsage>>({})
   useEffect(() => {
     let alive = true
     loadScales()
       .then((s) => alive && (setAll(s), setStatus('ready')))
       .catch(() => alive && setStatus('error'))
     loadScaleItems().then((m) => alive && setItemsMap(m))
+    loadScaleUsage().then((u) => alive && setUsage(u))
     return () => {
       alive = false
     }
   }, [])
+  const usageBadge = (id: number) => {
+    const n = usage[String(id)]?.n
+    return n ? (
+      <span className="disc-chip" style={{ cursor: 'default' }}
+        title={`Named verbatim in ${n} recent papers (2024→) in the Research Book — machine-matched, verify`}>
+        ↑ {n} recent
+      </span>
+    ) : null
+  }
 
   function toggleItems(id: number) {
     setOpen((prev) => {
@@ -249,7 +262,7 @@ export function MeasureBody({
                         <li key={sc.id}>
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <span className="ms-chosen-name">
-                              {sc.name} {sc.abbreviation && <span className="disc-dim">({sc.abbreviation})</span>}
+                              {sc.name} {sc.abbreviation && <span className="disc-dim">({sc.abbreviation})</span>} {usageBadge(sc.id)}
                             </span>
                             <span className="ms-chosen-meta">
                               {sc.construct}
@@ -308,7 +321,7 @@ export function MeasureBody({
                 <article key={sc.id} className="disc-card">
                   <div className="disc-card-main">
                     <h3 className="disc-title">
-                      {sc.name} {sc.abbreviation && <span className="disc-dim">({sc.abbreviation})</span>}
+                      {sc.name} {sc.abbreviation && <span className="disc-dim">({sc.abbreviation})</span>} {usageBadge(sc.id)}
                     </h3>
                     <p className="disc-meta">
                       {sc.construct && <span>{sc.construct}</span>}
