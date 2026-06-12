@@ -63,19 +63,22 @@ function tokensOf(phrase: string): string[] {
     .filter((t) => t.length >= 3 && !STOP.has(t))
 }
 
-function scoreScale(s: Scale, tokens: string[]): number {
-  if (!tokens.length) return 0
+function scoreScale(s: Scale, tokens: string[]): { score: number; matched: number } {
+  if (!tokens.length) return { score: 0, matched: 0 }
   const construct = (s.construct || '').toLowerCase()
   const name = s.name.toLowerCase()
   const abbr = (s.abbreviation || '').toLowerCase()
   const tags = (s.tags || []).join(' ').toLowerCase()
   let score = 0
+  let matched = 0
   for (const t of tokens) {
     if (construct.includes(t)) score += 3
     else if (name.includes(t) || abbr === t) score += 2
     else if (tags.includes(t)) score += 1
+    else continue
+    matched++
   }
-  return score
+  return { score, matched }
 }
 
 export function suggestScales(all: Scale[], constructs: string[]): { construct: string; scales: Scale[] }[] {
@@ -83,13 +86,18 @@ export function suggestScales(all: Scale[], constructs: string[]): { construct: 
   for (const c of constructs) {
     const tokens = tokensOf(c)
     if (!tokens.length) continue
+    // Distinct-tokens-matched ranks first: for "turnover intention", a scale
+    // matching both words must beat one matching only "intention" (audit B10 —
+    // Green Purchase Intention outranked the Turnover Intention Scale). When
+    // any scale matches the full phrase, partial matches drop out entirely.
     const scored = all
-      .map((s) => ({ s, score: scoreScale(s, tokens) }))
+      .map((s) => ({ s, ...scoreScale(s, tokens) }))
       .filter((x) => x.score >= 2) // a lone tag hit isn't a suggestion
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-      .map((x) => x.s)
-    if (scored.length) out.push({ construct: c, scales: scored })
+      .sort((a, b) => b.matched - a.matched || b.score - a.score)
+    const want = Math.min(2, tokens.length)
+    const strong = scored.filter((x) => x.matched >= want)
+    const picked = (strong.length ? strong : scored).slice(0, 3).map((x) => x.s)
+    if (picked.length) out.push({ construct: c, scales: picked })
   }
   return out
 }

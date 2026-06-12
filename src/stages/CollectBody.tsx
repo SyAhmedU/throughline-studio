@@ -7,7 +7,7 @@
 // status. Persists to project.stages.collect.data and hands off to Cadence.
 // ============================================================================
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { generate } from '../lib/api'
 import { nForCorr, nPerGroup } from '../lib/power'
@@ -54,7 +54,7 @@ const MODES = ['Online panel', 'Online (self-recruited)', 'In-person / lab', 'Fi
 const STATUSES = ['Not started', 'Piloting', 'Collecting', 'Complete']
 
 const ETHICS_CHECKS: { key: keyof CollectData; label: string }[] = [
-  { key: 'ethicsApproval', label: 'Ethics / IRB approval obtained (or exemption documented)' },
+  { key: 'ethicsApproval', label: 'Ethics / IRB approval obtained (the IRB is your institution’s research-ethics review board) — or exemption documented' },
   { key: 'dataProtection', label: 'Data protection planned — anonymisation, storage, retention' },
   { key: 'compensation', label: 'Participant burden & compensation are fair and stated' },
   { key: 'cmvPlan', label: 'Same-source bias addressed — second source, temporal separation, or acknowledged as a limitation' },
@@ -88,6 +88,10 @@ export function CollectBody({
   // break the planner's independence assumption — power depends on clusters ×
   // cluster size × ICC, not just total N. Warn rather than silently mis-apply.
   const nested = /multilevel|nested|diary|experience sampling/i.test(frame.design || '')
+  // A qualitative study has no power-based N at all — showing one was audit
+  // finding B18 ("Qualitative → recruit ≈ 139"). Replace, never mis-apply.
+  const qualitative = frame.design === 'Qualitative'
+  const mixedMethods = frame.design === 'Mixed-methods'
   const beyondPlanner = [
     frame.mediators?.trim() ? 'mediator(s)' : '',
     frame.moderators?.trim() ? 'moderator(s)' : '',
@@ -122,6 +126,10 @@ export function CollectBody({
 
   /** The plan as one verifiable sentence — insertable into the sampling plan. */
   function collectionPlanText(): string {
+    if (qualitative) {
+      // No fabricated N: saturation is the stopping rule, stated as method.
+      return `Qualitative design. Sample purposively for variation on the phenomenon (not randomly for representativeness). Stopping rule: saturation — stop when further interviews/observations yield no new codes or themes (Guest, Bunce & Johnson, 2006) — and report in the paper how saturation was judged. A power-based N does not apply to this design.`
+    }
     if (longitudinal && Number.isFinite(recruitN)) {
       return `Longitudinal design with ${nWaves} measurement waves, ${intervalWk} weeks apart. Recruit N = ${recruitN} at Wave 1; assuming ~${Math.round(retention * 100)}% wave-to-wave retention, this yields ≈ ${waveRows[waveRows.length - 1].expectedN} complete cases at Wave ${nWaves} (powered target: ${finalN}). Stop recruiting when Wave 1 reaches ${recruitN}.`
     }
@@ -184,7 +192,18 @@ export function CollectBody({
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'done' | 'offline' | 'error'>('idle')
   const [aiFilled, setAiFilled] = useState<string[]>([])
 
+  // ref guard: state can't stop synchronous double-clicks (audit S9)
+  const aiBusy = useRef(false)
   async function draftPlansWithAI() {
+    if (aiBusy.current) return
+    aiBusy.current = true
+    try {
+      await draftPlansWithAIInner()
+    } finally {
+      aiBusy.current = false
+    }
+  }
+  async function draftPlansWithAIInner() {
     if (aiStatus === 'loading') return
     setAiStatus('loading')
     const targetN = form.targetN || (Number.isFinite(suggestedN) ? String(suggestedN) : '')
@@ -239,6 +258,23 @@ export function CollectBody({
       {/* sample size */}
       <section className="bld-section">
         <h2 className="bld-h">Target sample size</h2>
+        {qualitative && (
+          <p className="bld-muted">
+            <strong>Qualitative design</strong> — a power-based N does not apply. Sample purposively for variation on
+            the phenomenon, and use <strong>saturation</strong> as the stopping rule: stop when further
+            interviews/observations yield no new codes or themes (Guest, Bunce &amp; Johnson, 2006), and report in the
+            paper how saturation was judged. The calculator below is hidden because its numbers would be wrong for
+            this design — switch the design in Frame if your study has a quantitative strand.
+          </p>
+        )}
+        {mixedMethods && (
+          <p className="anz-warn">
+            Mixed-methods: the planner below covers the <strong>quantitative strand only</strong>. Plan the
+            qualitative strand by purposive sampling and saturation, not by this N.
+          </p>
+        )}
+        {!qualitative && (
+        <>
         <div className="bld-grid">
           <Field label="Effect to detect">
             <select className="disc-select" value={effectKind} onChange={(e) => update({ effectKind: e.target.value as 'd' | 'r' })}>
@@ -268,7 +304,19 @@ export function CollectBody({
             ⚠ Your framed model includes {beyondPlanner.join(' and ')}. This planner covers only a two-group d and a
             bivariate r — interaction and indirect effects typically need substantially larger samples than either.
             Power the smallest effect you must detect, not the main effect.
+            {frame.mediators?.trim() &&
+              ' For indirect effects, use the required-N tables in Fritz & MacKinnon (2007), Psychological Science, rather than this planner.'}
           </p>
+        )}
+        {nested && (
+          <p className="anz-warn">
+            ⚠ Your design has nested / repeated observations (teams, classes, dyads, or diary days). This planner is
+            single-level — with clustered data, power depends on the <strong>number of clusters</strong>, cluster
+            size, and the ICC, not just total N. Treat the figure above as a floor and plan clusters × cluster size
+            with a multilevel power tool; analyses must also model the nesting (see the Analyze stage note).
+          </p>
+        )}
+        </>
         )}
       </section>
 
@@ -278,7 +326,14 @@ export function CollectBody({
         {!frame.design && (
           <p className="bld-muted">Choose a design in Frame and the plan appears here (waves for longitudinal, single-shot otherwise).</p>
         )}
-        {frame.design && !longitudinal && (
+        {qualitative && (
+          <p className="bld-muted">
+            <strong>Qualitative</strong> → purposive sampling, saturation as the stopping rule (Guest, Bunce &amp;
+            Johnson, 2006). No recruit target is computed — a powered N would be the wrong instrument for this
+            design. Use “Insert into sampling plan” to carry the saturation rule into the preregistration.
+          </p>
+        )}
+        {frame.design && !longitudinal && !qualitative && (
           <>
             <p className="bld-muted">
               <strong>{frame.design}</strong> → single-wave collection.{' '}

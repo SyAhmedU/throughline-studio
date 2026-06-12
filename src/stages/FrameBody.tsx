@@ -156,7 +156,20 @@ export function FrameBody({
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'done' | 'offline' | 'error'>('idle')
   const [aiFilled, setAiFilled] = useState<string[]>([])
 
+  // React state can't stop synchronous double-clicks — the re-render that
+  // disables the button lands after all the clicks (audit S9: 3 clicks fired
+  // 9 backend calls). The ref is the real in-flight guard.
+  const aiBusy = useRef(false)
   async function draftWithAI() {
+    if (aiBusy.current) return
+    aiBusy.current = true
+    try {
+      await draftWithAIInner()
+    } finally {
+      aiBusy.current = false
+    }
+  }
+  async function draftWithAIInner() {
     if (aiStatus === 'loading') return
     setAiStatus('loading')
     const f = formRef.current
@@ -338,6 +351,21 @@ export function FrameBody({
             <input className="bld-input" value={form.moderators} onChange={(e) => set({ moderators: e.target.value })} placeholder="optional" />
           </Field>
         </div>
+        {form.design === 'Qualitative' && (
+          <p className="anz-warn">
+            Qualitative design: the IV/DV/mediator boxes and directional hypotheses are quantitative machinery — use
+            them only if you have a quant strand. For a qualitative study, put your research question(s) above, treat
+            constructs as sensitizing concepts, and skip hypotheses; Collect switches to purposive sampling +
+            saturation, and Analyze points to the qualitative coding workbench.
+          </p>
+        )}
+        {/multilevel|nested|diary|experience sampling/i.test(form.design) && (
+          <p className="anz-warn">
+            Nested / repeated observations: state the levels explicitly (e.g., days within persons, employees within
+            teams) in your hypotheses — effects can differ across levels, and the power planner and flat statistics
+            need cluster-aware handling (both stages will remind you).
+          </p>
+        )}
       </section>
 
       {/* what the reading list grounds: theories to consider, constructs in play */}

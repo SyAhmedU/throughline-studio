@@ -187,6 +187,17 @@ export function Hub() {
                     refresh()
                   }
                 }}
+                onDuplicate={() => {
+                  const copy: Project = {
+                    ...structuredClone(p),
+                    id: 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                    title: `${p.title} (copy)`,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                  }
+                  saveProject(copy)
+                  refresh()
+                }}
               />
             ))}
           </div>
@@ -268,10 +279,12 @@ function ProjectCard({
   project,
   onOpen,
   onDelete,
+  onDuplicate,
 }: {
   project: Project
   onOpen: () => void
   onDelete: () => void
+  onDuplicate: () => void
 }) {
   const pct = Math.round(progress(project) * 100)
   return (
@@ -279,6 +292,19 @@ function ProjectCard({
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen() }}>
       <div className="project-card-head">
         <h3 className="project-card-title">{project.title}</h3>
+        {/* Duplicate sits before Delete so the destructive control is no
+            longer the card's only inline affordance (audit B23) */}
+        <button
+          className="icon-btn"
+          aria-label="Duplicate project"
+          title="Duplicate this project (copies every stage)"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDuplicate()
+          }}
+        >
+          <Icon name="plus" size={15} />
+        </button>
         <button
           className="icon-btn"
           aria-label="Delete project"

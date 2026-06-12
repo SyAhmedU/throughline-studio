@@ -147,6 +147,18 @@ function ExCard({ c }: { c: CaseStudy }) {
           Walkthrough <Icon name="arrow" size={13} />
         </span>
       </div>
+      {/* the clone affordance lived only at the detail-page footer and no
+          audit persona ever found it (B5) — surface it on the card itself */}
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={(e) => {
+          e.stopPropagation()
+          startFromExample(c)
+        }}
+        title="Create an editable project seeded from this paper's topic — then make it your own"
+      >
+        <Icon name="plus" size={13} /> Start my project from this
+      </button>
     </article>
   )
 }

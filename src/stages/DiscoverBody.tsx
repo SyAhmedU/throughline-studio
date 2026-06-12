@@ -157,32 +157,57 @@ export function DiscoverBody({
   }, [liveOn, liveQuery])
 
   // constructs suggested from the study's own title/question — deterministic
-  // token match against the 167 hand-coded construct names, click to filter
+  // token match against the 167 hand-coded construct names, click to filter.
+  // Hyper-generic corpus words match dozens of construct names and say nothing
+  // topical — they can't count as evidence (audit B19: "remote workers …
+  // organizational change" auto-filtered to *Exhaustion in Work and
+  // Organizational Contexts* on "work"+"organizational" alone).
+  const GENERIC = useMemo(
+    () =>
+      new Set([
+        'work', 'works', 'working', 'organizational', 'organization', 'organizations',
+        'employee', 'employees', 'workplace', 'job', 'jobs', 'context', 'contexts',
+        'behavior', 'behaviors', 'behaviour', 'behaviours', 'management', 'related',
+      ]),
+    [],
+  )
+  const fold = (w: string) => w.replace(/(es|s)$/, '')
   const suggestedConstructs = useMemo(() => {
     if (!corpus) return []
     const words = (project.title + ' ' + topic)
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .split(/[\s-]+/)
-      .filter((w) => w.length >= 4)
+      .filter((w) => w.length >= 4 && !GENERIC.has(w))
+      .map(fold)
     if (!words.length) return []
     return corpus.constructs
       .map((c) => {
-        const nameTokens = c.name.toLowerCase().split(/[\s/&-]+/).filter((t) => t.length >= 4)
-        const hits = nameTokens.filter((t) => words.some((w) => w.includes(t) || t.includes(w))).length
+        // only the construct name's informative tokens count, and a hit means
+        // token equality after a plural fold — never substring containment
+        const nameTokens = c.name
+          .toLowerCase()
+          .split(/[\s/&-]+/)
+          .filter((t) => t.length >= 4 && !GENERIC.has(t))
+          .map(fold)
+        const hits = nameTokens.filter((t) => words.includes(t)).length
         return { c, score: nameTokens.length ? hits / nameTokens.length : 0, hits }
       })
-      .filter((x) => x.hits >= 1 && x.score >= 0.5) // at least half the construct name matched
-      .sort((a, b) => b.score - a.score || b.c.paperCount - a.c.paperCount)
+      .filter((x) => x.hits >= 1 && x.score >= 0.5) // at least half the informative name matched
+      .sort((a, b) => b.hits - a.hits || b.score - a.score || b.c.paperCount - a.c.paperCount)
       .slice(0, 6)
-      .map((x) => x.c)
-  }, [corpus, project.title, topic])
+      .map((x) => ({ ...x.c, _hits: x.hits, _score: x.score }))
+  }, [corpus, project.title, topic, GENERIC])
 
-  // Start the user somewhere relevant: when the project arrived with a topic
-  // and the filters are untouched, pre-apply the top title-matched construct
-  // ONCE — visibly noted, one click to clear. Without this the default corpus
-  // order looks unrelated to the topic (persona audit, 2026-06-12).
+  // Start the user somewhere relevant — ONCE, visibly noted, one click to
+  // clear. A construct filter auto-applies only on a STRONG match (the full
+  // informative name, or ≥2 distinct tokens — audit B19). With no strong
+  // construct, fall back to seeding the search with the topic itself, so an
+  // off-corpus topic lands on an honest topic-shaped result (or the live/0
+  // empty state) instead of the unfiltered corpus (audit B20).
   const [autoCode, setAutoCode] = useState<string | null>(null)
+  const [autoQuery, setAutoQuery] = useState<string | null>(null)
+  const [bibCopied, setBibCopied] = useState(false)
   const autoTried = useRef(false)
   useEffect(() => {
     if (autoTried.current || !corpus) return
@@ -190,12 +215,25 @@ export function DiscoverBody({
       autoTried.current = true
       return
     }
-    if (suggestedConstructs.length === 0) return
     autoTried.current = true
-    const top = suggestedConstructs[0]
-    setAutoCode(top.code)
-    setFilters((f) => ({ ...f, constructCode: top.code }))
-  }, [corpus, suggestedConstructs, filters.query, filters.constructCode])
+    const top = suggestedConstructs[0] as (typeof suggestedConstructs)[number] & { _hits?: number; _score?: number }
+    if (top && ((top._hits ?? 0) >= 2 || (top._score ?? 0) >= 0.99)) {
+      setAutoCode(top.code)
+      setFilters((f) => ({ ...f, constructCode: top.code }))
+      return
+    }
+    const seed = (project.title + ' ' + topic)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/[\s-]+/)
+      .filter((w) => w.length >= 4 && !GENERIC.has(w))
+      .slice(0, 3)
+      .join(' ')
+    if (seed) {
+      setAutoQuery(seed)
+      setFilters((f) => ({ ...f, query: seed }))
+    }
+  }, [corpus, suggestedConstructs, filters.query, filters.constructCode, project.title, topic, GENERIC])
 
   const list = readingList(project)
   const inList = useMemo(() => new Set(list.map((p) => p.id)), [list])
@@ -303,18 +341,35 @@ export function DiscoverBody({
         <span className="disc-list-hint">{showList ? 'hide' : list.length ? 'show' : ''}</span>
       </button>
       {showList && list.length > 0 && (
-        <ul className="disc-saved">
-          {list.map((p) => (
-            <li key={p.id}>
-              <span className="disc-saved-t">
-                {p.title} {p.year && <span className="disc-dim">· {p.year}</span>}
-              </span>
-              <button className="icon-btn" aria-label="Remove" onClick={() => remove(p.id)}>
-                <Icon name="trash" size={14} />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="disc-saved">
+            {list.map((p) => (
+              <li key={p.id}>
+                <span className="disc-saved-t">
+                  {p.title} {p.year && <span className="disc-dim">· {p.year}</span>}
+                </span>
+                <button className="icon-btn" aria-label="Remove" onClick={() => remove(p.id)}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              navigator.clipboard?.writeText(bibtexOf(list)).then(
+                () => {
+                  setBibCopied(true)
+                  window.setTimeout(() => setBibCopied(false), 1800)
+                },
+                () => {},
+              )
+            }}
+            title="Copy the reading list as BibTeX — fields come only from the stored record (Zotero/Mendeley-ready)"
+          >
+            <Icon name={bibCopied ? 'check' : 'publish'} size={14} /> {bibCopied ? 'Copied BibTeX' : `Copy BibTeX (${list.length})`}
+          </button>
+        </>
       )}
       {showList && list.length === 0 && (
         <p className="disc-saved-empty">Add papers below to build the reading list this stage carries forward.</p>
@@ -469,6 +524,20 @@ export function DiscoverBody({
           </button>
         </p>
       )}
+      {autoQuery && filters.query === autoQuery && (
+        <p className="disc-count">
+          Searching your topic (<strong>{autoQuery}</strong>) — no single corpus construct matched it strongly.{' '}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setAutoQuery(null)
+              setFilters((f) => ({ ...f, query: '' }))
+            }}
+          >
+            Clear — browse the whole corpus
+          </button>
+        </p>
+      )}
       <p className="disc-count">
         {results.length.toLocaleString()} {results.length === 1 ? 'match' : 'matches'}
         {filters.constructCode && corpus.codeToName.get(filters.constructCode)
@@ -610,4 +679,23 @@ function FallbackTools({ topic, compact }: { topic: string; compact?: boolean })
       </div>
     </div>
   )
+}
+
+/** BibTeX from the stored record only — no field is ever invented; missing
+ *  fields are simply omitted, so every entry stays true to its source. */
+function bibtexOf(list: SavedPaper[]): string {
+  return list
+    .map((p) => {
+      const first =
+        (p.authors?.[0] || 'anon').split(/[\s,]+/).slice(-1)[0].toLowerCase().replace(/[^a-z]/g, '') || 'anon'
+      const word = (p.title.match(/[A-Za-z]{4,}/) || ['paper'])[0].toLowerCase()
+      const key = `${first}${p.year || ''}${word}`
+      const f: string[] = [`  title = {${p.title}}`]
+      if (p.authors?.length) f.push(`  author = {${p.authors.join(' and ')}}`)
+      if (p.year) f.push(`  year = {${p.year}}`)
+      if (p.journal) f.push(`  journal = {${p.journal}}`)
+      if (p.doi) f.push(`  doi = {${p.doi}}`)
+      return `@article{${key},\n${f.join(',\n')}\n}`
+    })
+    .join('\n\n')
 }

@@ -53,6 +53,7 @@ export function PublishBody({
 }) {
   const [form, update] = useStageData<PublishData>(project, 'publish', onChange)
   const [copied, setCopied] = useState(false)
+  const [needUrl, setNeedUrl] = useState(false)
 
   const lock = preregLock(project)
 
@@ -106,13 +107,32 @@ export function PublishBody({
             const on = !!form[c.key]
             return (
               <li key={String(c.key)}>
-                <button className={`pub-check ${on ? 'is-on' : ''}`} onClick={() => update({ [c.key]: !on } as Partial<PublishData>)} aria-pressed={on}>
+                <button
+                  className={`pub-check ${on ? 'is-on' : ''}`}
+                  onClick={() => {
+                    // "filed" is a claim about an external registry — it needs
+                    // the registry URL, not bare self-attestation (audit B16)
+                    if (c.key === 'preregistered' && !on && !(form.osfUrl || '').trim()) {
+                      setNeedUrl(true)
+                      return
+                    }
+                    if (c.key === 'preregistered') setNeedUrl(false)
+                    update({ [c.key]: !on } as Partial<PublishData>)
+                  }}
+                  aria-pressed={on}
+                >
                   <span className="pub-check-box">{on && <Icon name="check" size={13} />}</span>
                   <span>
                     {c.label}
                     {c.hint && <span className="pub-check-hint">{c.hint}</span>}
                   </span>
                 </button>
+                {c.key === 'preregistered' && needUrl && (
+                  <p className="anz-warn" style={{ marginTop: 6 }}>
+                    Paste the OSF / AsPredicted URL below first — the filing is the registration; this checkbox is
+                    just the bookkeeping.
+                  </p>
+                )}
               </li>
             )
           })}
@@ -125,6 +145,17 @@ export function PublishBody({
             <input className="bld-input" value={form.targetJournal ?? ''} onChange={(e) => update({ targetJournal: e.target.value })} placeholder="Find one in ScholarScope ↓" />
           </Field>
         </div>
+        {/* the availability statement journals ask for, assembled from the
+            answers above — it changes as the checklist changes (audit B17) */}
+        <p className="anz-fineprint" style={{ marginTop: 12 }}>
+          <strong>Data-availability statement (from your answers above):</strong> {availabilityStatement(form)}
+        </p>
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => navigator.clipboard?.writeText(availabilityStatement(form)).catch(() => {})}
+        >
+          <Icon name="publish" size={14} /> Copy statement
+        </button>
       </section>
 
       <div className="disc-fulltools">
@@ -139,6 +170,25 @@ export function PublishBody({
       </div>
     </div>
   )
+}
+
+/** Availability statement built only from the user's own checklist answers —
+ *  honest in both directions (says "not publicly available" when unchecked). */
+function availabilityStatement(form: PublishData): string {
+  const url = (form.osfUrl || '').trim()
+  const parts: string[] = []
+  parts.push(
+    form.dataShared
+      ? `The data supporting this study are openly available${url ? ` at ${url}` : ' (add the repository URL above)'}.`
+      : 'The data are not publicly available.',
+  )
+  parts.push(
+    form.materialsShared
+      ? `Study materials and the analysis log are shared${url ? ` at ${url}` : ''}.`
+      : 'Materials are available from the authors on request.',
+  )
+  if (form.preregistered && url) parts.push(`The study was preregistered at ${url}.`)
+  return parts.join(' ')
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

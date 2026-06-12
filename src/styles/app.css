@@ -1768,14 +1768,16 @@
   .stage-head::before { right: 0; font-size: 92px; }
 }
 
-/* tap-target floor — phones and any coarse pointer (WCAG 2.5.8 / 44px) */
+/* tap-target floor — phones and any coarse pointer. The floor is 44px for
+   EVERY control: audit S8 measured the header Export at 34px and filter chips
+   at 32px under the old 40px/padding-only rules. */
 @media (max-width: 860px), (pointer: coarse) {
   .btn { min-height: 44px; }
-  .btn-sm { min-height: 40px; }
-  .icon-btn { width: 40px; height: 40px; }
+  .btn-sm { min-height: 44px; }
+  .icon-btn { width: 44px; height: 44px; }
   .anz-tab,
-  .anz-pick { min-height: 40px; }
-  .disc-chip { padding: 8px 12px; font-size: 12px; }
+  .anz-pick { min-height: 44px; }
+  .disc-chip { padding: 8px 12px; font-size: 12px; min-height: 44px; }
   .disc-oa { min-height: 44px; }
   .disc-oa input { width: 19px; height: 19px; }
   .disc-select { min-height: 44px; }

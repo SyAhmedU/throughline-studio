@@ -109,6 +109,11 @@ export function AnalyzeBody({
     moderators?: string
   }
   const crossSectional = frame.design === 'Correlational / survey'
+  // every test in this embedded engine assumes independent rows — nested /
+  // repeated observations violate that, and a qualitative design has no
+  // business in a quant engine at all (audit findings B14/B18)
+  const nestedDesign = /multilevel|nested|diary|experience sampling/i.test(frame.design || '')
+  const qualDesign = frame.design === 'Qualitative'
 
   // ── Suggested analyses — deterministic, from the framed design (no AI) ────
   // Mirrors ToolsScope's recommender idea: read what was framed and point at
@@ -236,6 +241,40 @@ export function AnalyzeBody({
       }),
     )
   }
+
+  // ── auto-recorded run log (audit B13) ──────────────────────────────────────
+  // Every analysis configuration that produced output is recorded as it
+  // renders, capture or not — so the exported log can distinguish "ran" from
+  // "chose to report" instead of being an author-curated selection only.
+  const runLog = ((project.stages.analyze?.data as { runLog?: { sig: string; at: number }[] } | undefined)?.runLog) || []
+  useEffect(() => {
+    if (!ds) return
+    let sig = ''
+    if (analysis === 'descriptives') sig = `Descriptives — all numeric variables (${ds.name})`
+    else if (analysis === 'correlations' && sel.corr.length >= 2) sig = `Correlations — ${[...sel.corr].sort().join(', ')} (${ds.name})`
+    else if (analysis === 'reliability' && sel.rel.length >= 2) sig = `Reliability (α/ω) — ${[...sel.rel].sort().join(', ')} (${ds.name})`
+    else if (analysis === 'ttest' && sel.ttDV && sel.ttG) sig = `t-test — ${sel.ttDV} by ${sel.ttG} (${ds.name})`
+    else if (analysis === 'anova' && sel.anDV && sel.anF) sig = `ANOVA — ${sel.anDV} by ${sel.anF} (${ds.name})`
+    if (!sig || runLog.some((r) => r.sig === sig)) return
+    onChange(
+      setStageData(project, 'analyze', {
+        ...(project.stages.analyze.data || {}),
+        runLog: [...runLog, { sig, at: Date.now() }].slice(-200),
+      }),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis, sel, ds])
+  // round-trip from the full engine (audit B9): results computed in ToolsScope
+  // (mediation, regression, CFA…) can be pasted back so the analysis log and
+  // Write-stage pull contain the focal test too — provenance kept in the title
+  const [extText, setExtText] = useState('')
+  function addExternal() {
+    const t = extText.trim()
+    if (!t) return
+    capture('External result — computed in ToolsScope', t)
+    setExtText('')
+  }
+
   /** Reproducibility artifact: a markdown log of every captured analysis, in
    *  chronological order, with dataset + design context — this is the
    *  "analysis log" the Publish-stage open-science checklist asks you to share. */
@@ -254,10 +293,20 @@ export function AnalyzeBody({
     for (const c of [...captures].reverse()) {
       lines.push('', `### ${c.title} — ${new Date(c.at).toISOString()}`, '', c.apa)
     }
+    if (runLog.length) {
+      lines.push(
+        '',
+        '## All analyses run (auto-recorded)',
+        '',
+        'Every analysis configuration that produced output in this project, captured or not — recorded automatically at first run. Compare against the captured results above to see what was run but not reported.',
+        '',
+      )
+      for (const r of runLog) lines.push(`- ${new Date(r.at).toISOString()} — ${r.sig}`)
+    }
     lines.push(
       '',
       '---',
-      'This log contains the analyses the author chose to capture — an author-curated selection, not an exhaustive record of every test run in the session. Share it alongside the data so each result can be re-derived.',
+      'Captured results are the author\'s selection for the write-up; the auto-recorded list above it is the run record. Share this log alongside the data so each result can be re-derived.',
     )
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
     const a = document.createElement('a')
@@ -360,6 +409,21 @@ export function AnalyzeBody({
             : ' Write the results in the language of association.'}
         </p>
       )}
+      {nestedDesign && (
+        <p className="anz-warn">
+          Design on file: <strong>nested / repeated observations</strong>. Every test in this embedded engine assumes
+          independent rows — clustered data violate that, so flat results here overstate significance. Use multilevel
+          models for the focal tests (not available in this engine); treat anything computed below as descriptive
+          only, and say which level each claim lives at.
+        </p>
+      )}
+      {qualDesign && (
+        <p className="anz-warn">
+          Design on file: <strong>qualitative</strong>. This engine is quantitative — for your focal analysis, code
+          themes in ToolsScope's qualitative workbench (highlight-and-code, themes, co-occurrence) via the link
+          below. Numbers computed here apply only to any supplementary quantitative data you collected.
+        </p>
+      )}
 
       {/* suggested analyses — deterministic, from the framed design */}
       {framedAnything && suggestions.length > 0 && (
@@ -427,6 +491,24 @@ export function AnalyzeBody({
         {analysis === 'anova' && (
           <Anova ds={ds} nums={nums} cats={cats} sel={sel} setSel={setSel} onCapture={capture} />
         )}
+      </div>
+
+      {/* round-trip: paste the focal test back from the full engine */}
+      <div className="anz-ds" style={{ marginTop: 14 }}>
+        <p className="anz-ds-meta" style={{ marginTop: 0 }}>
+          <strong>Ran the focal test in ToolsScope?</strong> Paste its APA result line here so the analysis log and
+          the Write stage carry it too — it is captured verbatim, marked as external.
+        </p>
+        <textarea
+          className="bld-textarea"
+          rows={2}
+          value={extText}
+          onChange={(e) => setExtText(e.target.value)}
+          placeholder="e.g. the mediation (Model 4) write-up copied from ToolsScope"
+        />
+        <button className="btn btn-ghost btn-sm" onClick={addExternal} disabled={!extText.trim()} style={{ marginTop: 6 }}>
+          <Icon name="plus" size={14} /> Capture external result
+        </button>
       </div>
 
       {/* captured results — the carry-forward */}
@@ -536,12 +618,40 @@ function Correlations({
               </tbody>
             </table>
           </div>
-          <p className="anz-fineprint">Pearson r. * p&lt;.05, ** p&lt;.01, *** p&lt;.001. Pairwise N.</p>
-          <ApaLine
-            text={`A Pearson correlation matrix was computed among ${cm.vars.length} variables (pairwise N up to ${ds.rows.length}).`}
-            title="Correlation matrix"
-            onCapture={onCapture}
-          />
+          <p className="anz-fineprint">Pearson r. * p&lt;.05, ** p&lt;.01, *** p&lt;.001. Pairwise N. Focal-pair 95% CI via Fisher z.</p>
+          {cm.vars.length === 2 ? (() => {
+            // a focal pair deserves the full APA sentence with an interval,
+            // not just a matrix cell (audit B15a)
+            const cols = colsByName(ds)
+            const a = cols[cm.vars[0]] || []
+            const b = cols[cm.vars[1]] || []
+            let n = 0
+            for (let i = 0; i < Math.min(a.length, b.length); i++) {
+              if (Number.isFinite(a[i]) && Number.isFinite(b[i])) n++
+            }
+            const r = cm.r[1][0]
+            const p = cm.p[1][0]
+            if (n > 3 && Math.abs(r) < 1) {
+              const z = Math.atanh(r)
+              const se = 1 / Math.sqrt(n - 3)
+              const lo = Math.tanh(z - 1.96 * se)
+              const hi = Math.tanh(z + 1.96 * se)
+              return (
+                <ApaLine
+                  text={`${cm.vars[0]} and ${cm.vars[1]} were ${p < 0.05 ? 'significantly ' : ''}correlated, r(${n - 2}) = ${rfmt(r)}, 95% CI [${rfmt(lo)}, ${rfmt(hi)}], p ${pfmt(p)} (N = ${n}).`}
+                  title="Correlation (focal pair)"
+                  onCapture={onCapture}
+                />
+              )
+            }
+            return null
+          })() : (
+            <ApaLine
+              text={`A Pearson correlation matrix was computed among ${cm.vars.length} variables (pairwise N up to ${ds.rows.length}).`}
+              title="Correlation matrix"
+              onCapture={onCapture}
+            />
+          )}
         </>
       )}
     </>
@@ -581,7 +691,7 @@ function Reliability({ ds, nums, sel, setSel, onCapture }: SubProps) {
               </tbody>
             </table>
           </div>
-          <p className="anz-fineprint">* ω is a single-factor approximation — run a factor model in ToolsScope for a full estimate.</p>
+          <p className="anz-fineprint">α (Cronbach's alpha) is internal consistency — how strongly the items hang together, from 0 to 1. * ω is a single-factor approximation — run a factor model in ToolsScope for a full estimate.</p>
           <ApaLine
             text={`Internal consistency was ${alphaQualifier(rel.alpha)}, Cronbach's α = ${rfmt(rel.alpha)} for the ${rel.k}-item scale (N = ${rel.n}).`}
             title="Reliability (Cronbach's α)"
@@ -637,23 +747,33 @@ function TTest({ ds, nums, cats, sel, setSel, onCapture }: SubProps) {
       {sel.ttG && levels.length !== 2 && (
         <Empty msg={`“${sel.ttG}” has ${levels.length} level(s). An independent t-test needs exactly 2 — use ANOVA for more.`} />
       )}
-      {res && (
-        <>
-          <div className="anz-stat-row">
-            <Stat label={`${res.gv[0].level} (M, SD)`} value={`${f2(res.t.m1)}, ${f2(res.t.sd1)}`} />
-            <Stat label={`${res.gv[1].level} (M, SD)`} value={`${f2(res.t.m2)}, ${f2(res.t.sd2)}`} />
-            <Stat label="t" value={f2(res.t.t)} />
-            <Stat label="df" value={f2(res.t.df, 1)} />
-            <Stat label="p" value={pfmt(res.t.p)} />
-            <Stat label="Cohen's d" value={f2(res.t.cohensD)} />
-          </div>
-          <ApaLine
-            text={`A Welch independent-samples t-test compared ${sel.ttDV} between ${res.gv[0].level} (M = ${f2(res.t.m1)}, SD = ${f2(res.t.sd1)}) and ${res.gv[1].level} (M = ${f2(res.t.m2)}, SD = ${f2(res.t.sd2)}), t(${f2(res.t.df, 1)}) = ${f2(res.t.t)}, p ${pfmt(res.t.p)}, d = ${f2(res.t.cohensD)}.`}
-            title="Independent t-test"
-            onCapture={onCapture}
-          />
-        </>
-      )}
+      {res && (() => {
+        // 95% CI for d via the large-sample SE (Hedges & Olkin approximation)
+        const n1 = res.gv[0].values.length
+        const n2 = res.gv[1].values.length
+        const seD = Math.sqrt((n1 + n2) / (n1 * n2) + (res.t.cohensD * res.t.cohensD) / (2 * (n1 + n2)))
+        const dLo = res.t.cohensD - 1.96 * seD
+        const dHi = res.t.cohensD + 1.96 * seD
+        const dCI = `[${f2(dLo)}, ${f2(dHi)}]`
+        return (
+          <>
+            <div className="anz-stat-row">
+              <Stat label={`${res.gv[0].level} (M, SD)`} value={`${f2(res.t.m1)}, ${f2(res.t.sd1)}`} />
+              <Stat label={`${res.gv[1].level} (M, SD)`} value={`${f2(res.t.m2)}, ${f2(res.t.sd2)}`} />
+              <Stat label="t" value={f2(res.t.t)} />
+              <Stat label="df" value={f2(res.t.df, 1)} />
+              <Stat label="p" value={pfmt(res.t.p)} />
+              <Stat label="Cohen's d" value={f2(res.t.cohensD)} />
+              <Stat label="d 95% CI" value={dCI} />
+            </div>
+            <ApaLine
+              text={`A Welch independent-samples t-test compared ${sel.ttDV} between ${res.gv[0].level} (M = ${f2(res.t.m1)}, SD = ${f2(res.t.sd1)}) and ${res.gv[1].level} (M = ${f2(res.t.m2)}, SD = ${f2(res.t.sd2)}), t(${f2(res.t.df, 1)}) = ${f2(res.t.t)}, p ${pfmt(res.t.p)}, d = ${f2(res.t.cohensD)}, 95% CI ${dCI}.`}
+              title="Independent t-test"
+              onCapture={onCapture}
+            />
+          </>
+        )
+      })()}
     </>
   )
 }
@@ -698,6 +818,10 @@ function Anova({ ds, nums, cats, sel, setSel, onCapture }: SubProps) {
               Post-hoc (Bonferroni): {res.postHoc.map((h) => `${h.a}–${h.b} p ${pfmt(h.p)}`).join('; ')}
             </p>
           )}
+          <p className="anz-fineprint">
+            η² is a point estimate — an exact (noncentral-F) confidence interval is beyond this embedded engine.
+            Report the size band with that caveat, or compute the interval in the full engine.
+          </p>
           <ApaLine
             text={`A one-way ANOVA tested the effect of ${sel.anF} on ${sel.anDV}; F(${res.dfBetween}, ${res.dfWithin}) = ${f2(res.fStat)}, p ${pfmt(res.p)}, η² = ${f2(res.etaSquared)}.`}
             title="One-way ANOVA"

@@ -7,7 +7,7 @@
 // or hand off to JournalTime for AI drafting and journal styling.
 // ============================================================================
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import type { SavedScale } from '../lib/scales'
@@ -25,6 +25,8 @@ interface WriteData extends Record<string, unknown> {
   results?: string
   discussion?: string
   references?: string
+  credit?: string
+  coi?: string
 }
 
 interface FrameData {
@@ -62,6 +64,7 @@ export function WriteBody({
       methods: methodsDraft(frame, scales, project),
       results: captures.map((c) => c.apa).join('\n\n'),
       references: referencesDraft(frame, scales, papers),
+      limitations: limitationsDraft(frame, project),
     }),
     [project, frame, scales, captures, papers],
   )
@@ -74,6 +77,8 @@ export function WriteBody({
     sec('Method', form.methods)
     sec('Results', form.results)
     sec('Discussion', form.discussion)
+    if (form.credit) out.push(`\n## Author contributions (CRediT)\n${form.credit}`)
+    if (form.coi) out.push(`\n## Declarations\n${form.coi}`)
     if (form.references) out.push(`\n## References\n${form.references}`)
     return out.join('\n')
   }
@@ -81,7 +86,7 @@ export function WriteBody({
   function copyAll() {
     // An empty assemble must not report success — a novice will believe they
     // have a draft (audit finding, 2026-06-12).
-    const hasContent = !!(form.abstract || form.intro || form.methods || form.results || form.discussion || form.references)
+    const hasContent = !!(form.abstract || form.intro || form.methods || form.results || form.discussion || form.references || form.credit || form.coi)
     if (!hasContent) {
       setCopied('empty')
       window.setTimeout(() => setCopied(false), 3200)
@@ -96,7 +101,18 @@ export function WriteBody({
     )
   }
 
+  // ref guard: state can't stop synchronous double-clicks (audit S9)
+  const aiBusy = useRef(false)
   async function aiAbstract() {
+    if (aiBusy.current) return
+    aiBusy.current = true
+    try {
+      await aiAbstractInner()
+    } finally {
+      aiBusy.current = false
+    }
+  }
+  async function aiAbstractInner() {
     setAi('loading')
     const prompt =
       `Write a concise (~160 word) academic abstract from these study facts. ` +
@@ -157,8 +173,41 @@ export function WriteBody({
         {captures.length === 0 && <p className="anz-fineprint">No captured results yet — run analyses in the Analyze stage and capture them.</p>}
       </Section>
 
-      <Section label="Discussion">
-        <textarea className="bld-textarea" rows={4} value={form.discussion ?? ''} onChange={(e) => update({ discussion: e.target.value })} placeholder="What the findings mean, limitations, what's next." />
+      <Section
+        label="Discussion"
+        action={
+          <PullBtn
+            label="Pull limitations"
+            disabled={!drafts.limitations}
+            onClick={() => {
+              // append, never clobber — the limitations come from the project's
+              // own recorded design choices and join whatever is written
+              const cur = (form.discussion || '').trim()
+              if (!drafts.limitations || cur.includes(drafts.limitations)) return
+              update({ discussion: cur ? `${cur}\n\n${drafts.limitations}` : drafts.limitations })
+            }}
+          />
+        }
+      >
+        <textarea className="bld-textarea" rows={4} value={form.discussion ?? ''} onChange={(e) => update({ discussion: e.target.value })} placeholder="What the findings mean, limitations, what's next. “Pull limitations” derives them from your framed design — cross-sectional, single-source, sampling frame." />
+      </Section>
+
+      <Section label="Author contributions & declarations">
+        <textarea
+          className="bld-textarea"
+          rows={2}
+          value={form.credit ?? ''}
+          onChange={(e) => update({ credit: e.target.value })}
+          placeholder="CRediT roles, e.g. “A.B.: conceptualization, methodology, writing — original draft. C.D.: formal analysis, writing — review & editing.”"
+        />
+        <textarea
+          className="bld-textarea"
+          rows={2}
+          style={{ marginTop: 8 }}
+          value={form.coi ?? ''}
+          onChange={(e) => update({ coi: e.target.value })}
+          placeholder="Conflicts of interest and funding, e.g. “The authors declare no conflicts of interest. This work received no external funding.”"
+        />
       </Section>
 
       <Section label="References" action={<PullBtn onClick={() => update({ references: drafts.references })} disabled={!drafts.references} />}>
@@ -209,7 +258,7 @@ function introDraft(question: string, f: FrameData): string {
   return parts.join('\n\n')
 }
 function methodsDraft(f: FrameData, scales: SavedScale[], project: Project): string {
-  const c = (project.stages.collect?.data || {}) as { targetN?: string; mode?: string }
+  const c = (project.stages.collect?.data || {}) as { targetN?: string; mode?: string; exclusions?: string }
   const parts: string[] = []
   if (f.design) parts.push(`Design. A ${f.design.toLowerCase()} design was used.`)
   const ppts = [c.targetN ? `A sample of N = ${c.targetN}` : '', c.mode ? `was recruited via ${c.mode.toLowerCase()}` : ''].filter(Boolean).join(' ')
@@ -221,7 +270,44 @@ function methodsDraft(f: FrameData, scales: SavedScale[], project: Project): str
           .map((s) => `${s.construct || s.name} was measured with the ${s.name}${s.abbreviation ? ` (${s.abbreviation})` : ''}, ${s.itemCount} items${s.alphaSummary ? `, α = ${s.alphaSummary}` : ''} (${s.citation}).`)
           .join(' '),
     )
+  if (c.exclusions?.trim()) parts.push(`Exclusions. ${c.exclusions.trim()}`)
+  // the JARS-style full-disclosure sentence — keep it only if it is true of
+  // your study; deleting it is a signal to yourself that something is unreported
+  if (parts.length) parts.push('We report all measures, manipulations, and exclusions in this study.')
   return parts.join('\n\n')
+}
+
+/** Deterministic limitations from the project's own design choices (audit
+ *  B15b) — each sentence is triggered by a real, recorded decision, never
+ *  generated text. The author edits; nothing here is invented. */
+function limitationsDraft(f: FrameData, project: Project): string {
+  const c = (project.stages.collect?.data || {}) as { cmvPlan?: boolean; samplingPlan?: string }
+  const d = f.design || ''
+  const out: string[] = []
+  if (d === 'Correlational / survey') {
+    out.push(
+      'The cross-sectional design supports associations, not causal claims; reverse and reciprocal causation cannot be ruled out.',
+    )
+    if (!c.cmvPlan)
+      out.push(
+        'All variables were measured from a single source at a single point in time, so common-method variance may inflate the observed relationships.',
+      )
+  }
+  if (d === 'Longitudinal')
+    out.push(
+      'Attrition across waves may bias estimates if dropout relates to the constructs under study; retention analyses should accompany the results.',
+    )
+  if (d === 'Experimental' || d === 'Quasi-experimental')
+    out.push('The controlled setting buys internal validity at some cost to ecological validity; field replication would strengthen the claim.')
+  if (d === 'Qualitative')
+    out.push('Findings are transferable rather than statistically generalizable; the purposive sample bounds the contexts to which they speak.')
+  if (/multilevel|nested|diary|experience sampling/i.test(d))
+    out.push(
+      'Conclusions are bounded by the number of higher-level units (clusters, teams, or days), which typically constrains power more than the total observation count.',
+    )
+  if (/convenience|prolific|mturk|student|snowball|panel/i.test(c.samplingPlan || ''))
+    out.push('The sampling frame limits generalizability beyond similar populations.')
+  return out.length ? `Limitations. ${out.join(' ')}` : ''
 }
 function referencesDraft(f: FrameData, scales: SavedScale[], papers: ReturnType<typeof readingList>): string {
   const refs: string[] = []

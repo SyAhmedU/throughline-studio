@@ -84,16 +84,22 @@ export function suggestTheories(all: Theory[], phrases: string[]): Theory[] {
       const keywords = (t.keywords || []).join(' ').toLowerCase()
       const oneLiner = (t.oneLiner || '').toLowerCase()
       let score = 0
+      let matched = 0
       for (const tok of tokens) {
         if (constructs.includes(tok)) score += 3
         else if (name.includes(tok)) score += 2
         else if (keywords.includes(tok)) score += 2
         else if (oneLiner.includes(tok)) score += 1
+        else continue
+        matched++
       }
-      return { t, score }
+      return { t, score, matched }
     })
     .filter((x) => x.score >= 3) // one weak hit isn't a suggestion
-    .sort((a, b) => b.score - a.score)
+    // distinct tokens matched outrank raw weight: a theory hitting "burnout" +
+    // "depersonalization" must beat one hitting only "culture" (audit B21 —
+    // Consumer Culture Theory outranked JD-R for a burnout question)
+    .sort((a, b) => b.matched - a.matched || b.score - a.score)
     .slice(0, 4)
     .map((x) => x.t)
 }
