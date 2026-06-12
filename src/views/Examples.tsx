@@ -51,7 +51,7 @@ function Gallery() {
   const shorts = CASE_STUDIES.filter((c) => paceOf(c) === 'short')
   const longs = CASE_STUDIES.filter((c) => paceOf(c) === 'long')
   return (
-    <div className="examples">
+    <main className="examples" id="main">
       <header className="ex-head">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> Home
@@ -80,7 +80,7 @@ function Gallery() {
         note="Field studies, scale development, longitudinal and meta-analytic work — months to years."
         items={longs}
       />
-    </div>
+    </main>
   )
 }
 
@@ -179,7 +179,7 @@ function CaseStudyDetail({ study }: { study: CaseStudy }) {
     ['Instrument', study.instrument],
   ]
   return (
-    <div className="examples">
+    <main className="examples" id="main">
       <header className="ex-head">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/examples')}>
           <Icon name="back" size={14} /> All examples
@@ -277,6 +277,6 @@ function CaseStudyDetail({ study }: { study: CaseStudy }) {
           Start a project from this example <Icon name="arrow" size={15} />
         </button>
       </div>
-    </div>
+    </main>
   )
 }

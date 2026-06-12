@@ -15,9 +15,16 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [googleOn, setGoogleOn] = useState(false)
+  const [down, setDown] = useState(false)
 
   useEffect(() => {
-    if (configured) enabledProviders().then((p) => setGoogleOn(!!p.google)).catch(() => {})
+    if (configured)
+      enabledProviders()
+        .then((p) => {
+          if (p === null) setDown(true)
+          else setGoogleOn(!!p.google)
+        })
+        .catch(() => setDown(true))
   }, [configured])
 
   async function doGoogle() {
@@ -65,6 +72,12 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <>
+            {down && (
+              <p className="auth-preview">
+                Can't reach the accounts server right now — sign-in is temporarily unavailable. Everything works
+                without an account; your projects stay saved in this browser.
+              </p>
+            )}
             {googleOn && (
               <button className="btn btn-ghost auth-google" onClick={doGoogle} disabled={busy}>
                 <GoogleG /> Continue with Google

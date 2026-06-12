@@ -52,7 +52,9 @@ export function Hub() {
   const returning = projects.length > 0
 
   return (
-    <div className="hub">
+    // main#main: the skip-link target and screen-reader landmark — ProjectView
+    // carries its own; every routed view needs one
+    <main className="hub" id="main">
       {/* ── Hero — full pitch for strangers, a slim band for returners ── */}
       {returning ? (
         <section className="hero hero-compact">
@@ -267,7 +269,7 @@ export function Hub() {
       {showTour && (
         <VideoLightbox src="/tour.mp4" poster="/tour-poster.jpg" label="Product tour video" onClose={() => setShowTour(false)} />
       )}
-    </div>
+    </main>
   )
 }
 

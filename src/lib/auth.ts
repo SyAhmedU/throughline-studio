@@ -94,8 +94,11 @@ export async function signOut(): Promise<void> {
   if (c) await c.auth.signOut()
 }
 
-/** Which OAuth providers are enabled in the dashboard (to hide dead buttons). */
-export async function enabledProviders(): Promise<Record<string, boolean>> {
+/** Which OAuth providers are enabled in the dashboard (to hide dead buttons).
+ *  null = the accounts backend is unreachable at the network level, so the
+ *  caller can warn BEFORE the user types an email that will only fail on
+ *  submit; {} = reachable but no external providers enabled. */
+export async function enabledProviders(): Promise<Record<string, boolean> | null> {
   if (!isConfigured()) return {}
   try {
     const r = await guardedFetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_ANON } })
@@ -103,7 +106,7 @@ export async function enabledProviders(): Promise<Record<string, boolean>> {
     const json = (await r.json()) as { external?: Record<string, boolean> }
     return json.external || {}
   } catch {
-    return {}
+    return null
   }
 }
 
