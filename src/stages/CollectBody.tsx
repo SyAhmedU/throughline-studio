@@ -45,6 +45,7 @@ interface CollectData extends Record<string, unknown> {
   dataProtection?: boolean
   compensation?: boolean
   cmvPlan?: boolean
+  vulnerableGroups?: boolean
 }
 
 const DEFAULT_CONSENT =
@@ -58,6 +59,7 @@ const ETHICS_CHECKS: { key: keyof CollectData; label: string }[] = [
   { key: 'dataProtection', label: 'Data protection planned — anonymisation, storage, retention' },
   { key: 'compensation', label: 'Participant burden & compensation are fair and stated' },
   { key: 'cmvPlan', label: 'Same-source bias addressed — second source, temporal separation, or acknowledged as a limitation' },
+  { key: 'vulnerableGroups', label: 'Vulnerable participants & special-category data considered — minors, patients, employees under power imbalance; extra safeguards documented, or confirmed not applicable' },
 ]
 
 export function CollectBody({
@@ -154,8 +156,17 @@ export function CollectBody({
     exclusions: form.exclusions ?? legacy.exclusions,
   }
   const locked = !!(form.preregText && form.preregLockedAt)
+  // a locked document of "(to write)" placeholders would carry the authority
+  // of a preregistration with none of its content — all three plans must say
+  // something (even "no exclusions planned" is a statement) before the lock
+  const plansReady = !!(
+    (plans.samplingPlan || '').trim() &&
+    (plans.analysisPlan || '').trim() &&
+    (plans.exclusions || '').trim()
+  )
 
   function lockPrereg() {
+    if (!plansReady) return
     update({ ...plans, preregText: buildPrereg(project, plans), preregLockedAt: Date.now() })
   }
   function unlockPrereg() {
@@ -464,13 +475,19 @@ export function CollectBody({
             <label className="bld-label">Exclusion criteria</label>
             <textarea className="bld-textarea" rows={2} value={plans.exclusions} onChange={(e) => update({ exclusions: e.target.value })} placeholder="Attention checks, incomplete responses, outliers…" />
             <div className="bld-section-head" style={{ marginTop: 12 }}>
-              <button className="btn btn-fill" onClick={lockPrereg}>
+              <button className="btn btn-fill" onClick={lockPrereg} disabled={!plansReady}>
                 <Icon name="publish" size={15} /> Lock preregistration
               </button>
               <button className="btn btn-ghost btn-sm" onClick={copyPrereg}>
                 {copied ? 'Copied' : 'Copy draft'}
               </button>
             </div>
+            {!plansReady && (
+              <p className="anz-fineprint">
+                The lock stays off until all three plans have content — a preregistration of empty placeholders
+                is not a preregistration. No exclusions planned? Write exactly that.
+              </p>
+            )}
           </>
         )}
         {(form.preregHistory?.length || 0) > 0 && (

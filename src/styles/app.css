@@ -1768,6 +1768,14 @@
   .stage-head::before { right: 0; font-size: 92px; }
 }
 
+@media (max-width: 430px) {
+  /* seven labeled nodes were 17px too wide at 390px — node 7 sat half-clipped
+     at the right edge. Trim gap + padding + title size so all seven fit. */
+  .spine-list { gap: 2px; }
+  .spine-node-btn { padding: 8px 2px; }
+  .spine-title { font-size: 10px; letter-spacing: 0; }
+}
+
 /* tap-target floor — phones and any coarse pointer. The floor is 44px for
    EVERY control: audit S8 measured the header Export at 34px and filter chips
    at 32px under the old 40px/padding-only rules. */

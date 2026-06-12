@@ -169,7 +169,7 @@ export function MeasureBody({
   useEffect(() => setLimit(PAGE), [query, domain])
 
   const results = useMemo(() => (all ? searchScales(all, query, domain) : []), [all, query, domain])
-  const frame = (project.stages.frame?.data || {}) as { iv?: string; dv?: string; mediators?: string; moderators?: string }
+  const frame = (project.stages.frame?.data || {}) as { iv?: string; dv?: string; mediators?: string; moderators?: string; design?: string }
   const suggestions = useMemo(
     () => (all ? suggestScales(all, framedConstructs(frame)) : []),
     [all, frame.iv, frame.dv, frame.mediators, frame.moderators],
@@ -198,6 +198,13 @@ export function MeasureBody({
 
   return (
     <div className="ms">
+      {frame.design === 'Qualitative' && (
+        <p className="anz-warn">
+          Qualitative design on file: validated scales are quantitative machinery — your instrument is the interview
+          or observation guide, which this catalogue cannot build. Use this stage only if your study has a quant
+          strand; otherwise write the guide into the sampling plan at Collect (purposive sampling + saturation).
+        </p>
+      )}
       {/* the instrument */}
       <div className="ms-instrument">
         <div className="ms-instr-top">

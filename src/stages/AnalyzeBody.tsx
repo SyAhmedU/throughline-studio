@@ -202,14 +202,18 @@ export function AnalyzeBody({
     if (!ds) return
     const nums = numericVars(ds)
     const cats = categoricalVars(ds)
+    // outcomes conventionally sit at the END of a dataset (demographics first,
+    // DV last) — defaulting to nums[0] showed a null t-test on `age` while the
+    // demo's real effects sat untouched on `satisfaction`
+    const dv = nums[nums.length - 1] ?? ''
     setSel({
       corr: nums.slice(0, 8),
       rel: scaleFamily(nums),
-      ttDV: nums[0] ?? '',
+      ttDV: dv,
       // the t-test needs exactly 2 levels and ANOVA wants 3+ — defaulting both
       // to cats[0] left one of them on a factor it can't use
       ttG: cats.find((c) => levelsOf(ds, c).length === 2) ?? cats[0] ?? '',
-      anDV: nums[0] ?? '',
+      anDV: dv,
       anF: cats.find((c) => levelsOf(ds, c).length >= 3) ?? cats[0] ?? '',
     })
   }, [ds])
@@ -773,6 +777,10 @@ function TTest({ ds, nums, cats, sel, setSel, onCapture }: SubProps) {
               title="Independent t-test"
               onCapture={onCapture}
             />
+            <p className="anz-fineprint">
+              Welch's t is robust to unequal variances, but check the outcome's skew/kurtosis in Descriptives first —
+              with marked non-normality, the Mann–Whitney test in ToolsScope is the safer call.
+            </p>
           </>
         )
       })()}
@@ -822,7 +830,9 @@ function Anova({ ds, nums, cats, sel, setSel, onCapture }: SubProps) {
           )}
           <p className="anz-fineprint">
             η² is a point estimate — an exact (noncentral-F) confidence interval is beyond this embedded engine.
-            Report the size band with that caveat, or compute the interval in the full engine.
+            Report the size band with that caveat, or compute the interval in the full engine. ANOVA also assumes
+            roughly normal residuals and similar group variances — eyeball the group SDs above; Kruskal–Wallis in
+            ToolsScope is the robust alternative.
           </p>
           <ApaLine
             text={`A one-way ANOVA tested the effect of ${sel.anF} on ${sel.anDV}; F(${res.dfBetween}, ${res.dfWithin}) = ${f2(res.fStat)}, p ${pfmt(res.p)}, η² = ${f2(res.etaSquared)}.`}
