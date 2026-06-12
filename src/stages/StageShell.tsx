@@ -5,19 +5,25 @@
 // Notes + status are shared across all stages.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { STAGES, stageDef } from '../lib/stages'
 import { setStageNotes, setStageStatus } from '../lib/store'
 import type { Project, StageId, StageStatus } from '../lib/types'
-import { AnalyzeBody } from './AnalyzeBody'
-import { CollectBody } from './CollectBody'
-import { DiscoverBody } from './DiscoverBody'
-import { FrameBody } from './FrameBody'
-import { MeasureBody } from './MeasureBody'
-import { PublishBody } from './PublishBody'
-import { WriteBody } from './WriteBody'
+
+// Each stage body is its own chunk: they carry heavy stage-specific libs
+// (Analyze → the verbatim ToolsScope stats engine, Discover → the corpus
+// layer, Measure → the scale catalog) that shouldn't weigh down the hub or
+// each other. Same-origin chunk fetches resolve in ms; the stage-grid enter
+// animation absorbs the swap.
+const AnalyzeBody = lazy(() => import('./AnalyzeBody').then((m) => ({ default: m.AnalyzeBody })))
+const CollectBody = lazy(() => import('./CollectBody').then((m) => ({ default: m.CollectBody })))
+const DiscoverBody = lazy(() => import('./DiscoverBody').then((m) => ({ default: m.DiscoverBody })))
+const FrameBody = lazy(() => import('./FrameBody').then((m) => ({ default: m.FrameBody })))
+const MeasureBody = lazy(() => import('./MeasureBody').then((m) => ({ default: m.MeasureBody })))
+const PublishBody = lazy(() => import('./PublishBody').then((m) => ({ default: m.PublishBody })))
+const WriteBody = lazy(() => import('./WriteBody').then((m) => ({ default: m.WriteBody })))
 
 export function StageShell({
   project,
@@ -88,7 +94,9 @@ export function StageShell({
 
       <div className="stage-grid">
         <div className="stage-main">
-          <Body project={project} onChange={onChange} topic={topic} />
+          <Suspense fallback={null}>
+            <Body project={project} onChange={onChange} topic={topic} />
+          </Suspense>
 
           <label className="notes-label" htmlFor="stage-notes">
             Working notes

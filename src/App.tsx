@@ -2,7 +2,7 @@
 // Throughline Studio — app shell + routing.
 // ============================================================================
 
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Ambient } from './components/Ambient'
 import { BrandBar } from './components/BrandBar'
 import { parseRoute, useHash } from './lib/router'
@@ -18,6 +18,14 @@ export default function App() {
   const hash = useHash()
   const route = parseRoute(hash)
   const sync = useCloudSync()
+
+  // Hash routing keeps the old scroll position when the view swaps, which
+  // strands you mid-page after a stage/route change. Reset to top whenever the
+  // route identity changes (instant — a 2000px smooth-scroll would be worse).
+  const routeKey = `${route.name}:${route.projectId ?? ''}:${route.stageId ?? ''}:${route.slug ?? ''}`
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [routeKey])
 
   return (
     <div className="app">

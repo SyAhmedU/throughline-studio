@@ -1987,6 +1987,9 @@
 .stage-head { position: relative; }
 @media (prefers-reduced-motion: no-preference) {
   .stage-head { animation: rise .45s var(--ease) both; }
+  /* body follows the head with a beat's delay — one calm two-step entrance
+     (StageShell remounts per stage via key={active}, so this re-runs) */
+  .stage-grid { animation: rise .5s var(--ease) both; animation-delay: .07s; }
 }
 .stage-head::before {
   content: attr(data-n); position: absolute; right: -6px; top: -30px;
