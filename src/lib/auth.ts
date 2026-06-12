@@ -20,12 +20,35 @@ export function isConfigured(): boolean {
   return Boolean(SUPA_URL && SUPA_ANON)
 }
 
+// Dead-backend circuit breaker: if the Supabase host is gone (NXDOMAIN),
+// supabase-js + sync retries storm the network on every visit. After two
+// consecutive network-level failures (fetch TypeError — DNS/offline only,
+// auth/RLS errors don't count) all later calls fail instantly without
+// touching the network — degrading to the same UX as preview mode.
+let _netFails = 0
+let _breakerOpen = false
+async function guardedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  if (_breakerOpen) throw new TypeError('auth: Supabase unreachable (circuit open)')
+  try {
+    const r = await fetch(input, init)
+    _netFails = 0
+    return r
+  } catch (e) {
+    if (++_netFails >= 2) {
+      _breakerOpen = true
+      console.warn('[auth] Supabase unreachable — staying offline for this page load.')
+    }
+    throw e
+  }
+}
+
 let _client: SupabaseClient | null = null
 export function client(): SupabaseClient | null {
   if (!isConfigured()) return null
   if (!_client) {
     _client = createClient(SUPA_URL, SUPA_ANON, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      global: { fetch: guardedFetch },
     })
   }
   return _client
@@ -75,7 +98,7 @@ export async function signOut(): Promise<void> {
 export async function enabledProviders(): Promise<Record<string, boolean>> {
   if (!isConfigured()) return {}
   try {
-    const r = await fetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_ANON } })
+    const r = await guardedFetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_ANON } })
     if (!r.ok) return {}
     const json = (await r.json()) as { external?: Record<string, boolean> }
     return json.external || {}
