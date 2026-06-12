@@ -23,7 +23,7 @@ import {
   type ScaleUsage,
 } from '../lib/scales'
 import { ReadingFacets } from '../components/ReadingFacets'
-import { deepLink, stageDef, toolLabel } from '../lib/stages'
+import { deepLink, stageDef } from '../lib/stages'
 import { setStageData } from '../lib/store'
 import type { Project } from '../lib/types'
 
@@ -238,7 +238,7 @@ export function MeasureBody({
           <div className="disc-fulltools-row">
             {tools.map((t) => (
               <a key={t.name} className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
-                {toolLabel(t)} <Icon name="external" size={12} />
+                {t.name} <Icon name="external" size={12} />
               </a>
             ))}
           </div>

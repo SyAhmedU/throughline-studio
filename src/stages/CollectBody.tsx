@@ -14,7 +14,7 @@ import { nForCorr, nPerGroup } from '../lib/power'
 import { buildPrereg, fmtLockDate, planValues, type PreregVersion } from '../lib/prereg'
 import type { SavedScale } from '../lib/scales'
 import { ReadingFacets } from '../components/ReadingFacets'
-import { deepLink, stageDef, toolLabel } from '../lib/stages'
+import { deepLink, stageDef } from '../lib/stages'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
 
@@ -84,10 +84,6 @@ export function CollectBody({
     moderators?: string
   }
   const longitudinal = frame.design === 'Longitudinal'
-  // Nested / repeated-observation designs (teams, classes, dyads, diary days)
-  // break the planner's independence assumption — power depends on clusters ×
-  // cluster size × ICC, not just total N. Warn rather than silently mis-apply.
-  const nested = /multilevel|nested|diary|experience sampling/i.test(frame.design || '')
   const beyondPlanner = [
     frame.mediators?.trim() ? 'mediator(s)' : '',
     frame.moderators?.trim() ? 'moderator(s)' : '',
@@ -511,7 +507,7 @@ export function CollectBody({
         <div className="disc-fulltools-row">
           {tools.map((t) => (
             <a key={t.name} className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
-              {toolLabel(t)} <Icon name="external" size={12} />
+              {t.name} <Icon name="external" size={12} />
             </a>
           ))}
         </div>

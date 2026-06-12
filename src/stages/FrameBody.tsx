@@ -13,7 +13,7 @@ import { ReadingFacets } from '../components/ReadingFacets'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import { fmtLockDate, preregLock } from '../lib/prereg'
-import { deepLink, stageDef, toolLabel } from '../lib/stages'
+import { deepLink, stageDef } from '../lib/stages'
 import { saveProject } from '../lib/store'
 import {
   loadTheories,
@@ -44,8 +44,6 @@ const DESIGNS = [
   'Quasi-experimental',
   'Correlational / survey',
   'Longitudinal',
-  'Multilevel / nested (teams, classes, dyads)',
-  'Diary / experience sampling',
   'Qualitative',
   'Mixed-methods',
 ]
@@ -453,7 +451,7 @@ export function FrameBody({
         <div className="disc-fulltools-row">
           {tools.map((t) => (
             <a key={t.name} className="disc-fulltool" href={deepLink(t, topic)} target="_blank" rel="noopener noreferrer">
-              {toolLabel(t)} <Icon name="external" size={12} />
+              {t.name} <Icon name="external" size={12} />
             </a>
           ))}
         </div>
