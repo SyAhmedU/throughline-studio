@@ -5,7 +5,8 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Ambient } from './components/Ambient'
 import { BrandBar } from './components/BrandBar'
-import { parseRoute, useHash } from './lib/router'
+import { navigate, parseRoute, useHash } from './lib/router'
+import { createProject, saveProject } from './lib/store'
 import { useCloudSync } from './lib/useCloudSync'
 import { Hub } from './views/Hub'
 import { ProjectView } from './views/ProjectView'
@@ -26,6 +27,17 @@ export default function App() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [routeKey])
+
+  // Suite topic hand-off (hub Quick Start → here), same pattern as ?seed=/?idea=
+  // on the other tools: read ?topic= once on a bare URL, strip it, spin up a
+  // project with the question pre-filled, and land in the workspace.
+  useEffect(() => {
+    const topic = (new URLSearchParams(window.location.search).get('topic') || '').trim()
+    if (!topic) return
+    window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+    const p = saveProject({ ...createProject(topic.slice(0, 80), ''), question: topic })
+    navigate(`/p/${p.id}`)
+  }, [])
 
   return (
     <div className="app">
