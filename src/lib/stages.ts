@@ -10,6 +10,9 @@ import type { StageId } from './types'
 
 export interface ToolRef {
   name: string
+  /** function-first verb phrase shown before the product name on link buttons —
+   *  a bare product name means nothing to a first-time user (persona audit) */
+  action?: string
   /** what this tool contributes at this stage */
   role: string
   url: string
@@ -46,22 +49,26 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'PaperCards',
+        action: 'Dissect a paper',
         role: 'Any paper as a glanceable card — constructs, effects, method. Trace the citation network to find what to read next.',
         url: 'https://papercards.vercel.app/',
         param: 'seed',
       },
       {
         name: "Syed's Research Book",
+        action: 'Browse the corpus',
         role: 'Search 9,388 hand-coded papers across 167 OB/management constructs.',
         url: 'https://syahmedu.github.io/syeds-research-book/',
       },
       {
         name: 'BookScope',
+        action: 'Search the books',
         role: 'Full-text search across 288 academic reference books (~141K pages).',
         url: 'https://bookscope.vercel.app/',
       },
       {
         name: 'ScholarScope',
+        action: 'See who leads the field',
         role: 'See who leads the field — institutions, journals, authors (live OpenAlex).',
         url: 'https://syahmedu.github.io/scholarscope/',
       },
@@ -79,18 +86,21 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'ResearchFlow',
+        action: 'Run the guided wizard',
         role: 'Ten-stage wizard: idea → question → literature → theory → hypotheses → design.',
         url: 'https://researchflow-syahmedus-projects.vercel.app/',
         param: 'idea',
       },
       {
         name: 'TheoryScope',
+        action: 'Pick a theory lens',
         role: 'Pick the lens your study looks through, from ~400 mapped theories.',
         url: 'https://theoryscope.vercel.app/',
         param: 'q',
       },
       {
         name: 'FallacyScope',
+        action: 'Check the pitfalls',
         role: 'Check the 48 paradoxes, fallacies & biases that bend research — by lifecycle stage.',
         url: 'https://syahmedu.github.io/fallacyscope/',
       },
@@ -108,6 +118,7 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'ScaleScope',
+        action: 'Find a validated scale',
         role: 'Validated measurement scales with Cronbach’s α, dimensions, and APA citations; survey composer + reliability calculator.',
         url: 'https://scalescope.vercel.app/',
         param: 'q',
@@ -126,12 +137,14 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'Cadence',
+        action: 'Field the survey',
         role: 'Typeform-style, one-question-at-a-time survey deployment with consent, resume, waves, and scale-mean analytics.',
         url: 'https://syahmedu.github.io/cadence/',
         param: 'gen',
       },
       {
         name: 'OSF',
+        action: 'File the prereg',
         role: 'File the locked preregistration (OSF Registries) before fielding — the timestamp is the point.',
         url: 'https://osf.io/',
         external: true,
@@ -150,6 +163,7 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'ToolsScope',
+        action: 'Run the full stats engine',
         role: 'Real, dependency-free stats engine in the browser (t-tests → ANOVA → OLS → EFA/CFA → mediation); qualitative coding; writes APA write-ups and draws the figures.',
         url: 'https://toolsscope.vercel.app/',
         param: 'plan',
@@ -168,6 +182,7 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'JournalTime',
+        action: 'Develop & format the manuscript (.docx)',
         role: 'Research Compass (AI gap finder), Article Developer (full draft), and Journal Studio (write for a specific journal).',
         url: 'https://syahmedu.github.io/journaltime/',
         param: 'topic',
@@ -186,11 +201,13 @@ export const STAGES: StageDef[] = [
     tools: [
       {
         name: 'ScholarScope',
+        action: 'Choose the journal',
         role: 'Publish desk: 1,959 journals’ turnaround data, Find-My-Journal wizard, and live OpenAlex journal metrics.',
         url: 'https://syahmedu.github.io/scholarscope/',
       },
       {
         name: 'OSF',
+        action: 'Share data & materials',
         role: 'Open Science Framework — share data, materials, the analysis log, and the frozen preregistration.',
         url: 'https://osf.io/',
         external: true,
@@ -205,6 +222,11 @@ export function stageDef(id: StageId): StageDef {
   const found = STAGES.find((s) => s.id === id)
   if (!found) throw new Error(`Unknown stage: ${id}`)
   return found
+}
+
+/** Function-first link label: "Field the survey → Cadence", never a bare product name. */
+export function toolLabel(t: ToolRef): string {
+  return t.action ? `${t.action} → ${t.name}` : t.name
 }
 
 /** Build a topic deep-link into an external tool (mirrors the suite hub's buildDeepLink). */
