@@ -127,7 +127,11 @@ function ExCard({ c }: { c: CaseStudy }) {
       tabIndex={0}
       onClick={open}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') open()
+        // role="button" must respond to Space as well as Enter
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          open()
+        }
       }}
     >
       <div className="ex-card-meta">
