@@ -2159,3 +2159,85 @@ a.xw-chip:hover { color: var(--sc, var(--accent)); border-color: var(--sc, var(-
 button.rfx-chip { cursor: pointer; transition: color 0.16s var(--ease), border-color 0.16s var(--ease); }
 button.rfx-chip:hover { color: var(--accent); border-color: var(--accent); }
 .rfx-more { border-style: dotted; color: var(--ink-3, var(--ink-2)); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION LAYER — orchestrated arrivals + a living thread. One-shot cascades
+   when a stage opens; infinite motion only on the thread's beads (the suite's
+   signature), never on content. All inside the no-preference query so
+   reduced-motion users get instant, fully-visible content; the global
+   reduce-kill block above already silences everything else.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  /* a stage opens: head leads (existing), then the main column assembles */
+  .stage-main > * { opacity: 0; animation: rise .5s var(--ease) both; }
+  .stage-main > :nth-child(1) { animation-delay: .12s; }
+  .stage-main > :nth-child(2) { animation-delay: .18s; }
+  .stage-main > :nth-child(3) { animation-delay: .24s; }
+  .stage-main > :nth-child(4) { animation-delay: .3s; }
+  .stage-main > :nth-child(5) { animation-delay: .36s; }
+  .stage-main > :nth-child(n+6) { animation-delay: .42s; }
+  .stage-side > * { opacity: 0; animation: rise .55s var(--ease) both; }
+  .stage-side > :nth-child(1) { animation-delay: .22s; }
+  .stage-side > :nth-child(2) { animation-delay: .3s; }
+  .stage-side > :nth-child(3) { animation-delay: .38s; }
+  .stage-side > :nth-child(n+4) { animation-delay: .46s; }
+
+  /* the thread tray threads its chips in one by one */
+  .thread-tray > * { opacity: 0; animation: rise .4s var(--ease) both; }
+  .thread-tray > :nth-child(1) { animation-delay: .04s; }
+  .thread-tray > :nth-child(2) { animation-delay: .09s; }
+  .thread-tray > :nth-child(3) { animation-delay: .14s; }
+  .thread-tray > :nth-child(4) { animation-delay: .19s; }
+  .thread-tray > :nth-child(5) { animation-delay: .24s; }
+  .thread-tray > :nth-child(6) { animation-delay: .29s; }
+  .thread-tray > :nth-child(7) { animation-delay: .34s; }
+  .thread-tray > :nth-child(n+8) { animation-delay: .39s; }
+
+  /* project cards: the mini-spine draws itself, segment by segment */
+  .project-spine-seg { transform-origin: left center; animation: seg-draw .45s var(--ease) both; }
+  .project-spine-seg:nth-of-type(1) { animation-delay: .08s; }
+  .project-spine-seg:nth-of-type(2) { animation-delay: .14s; }
+  .project-spine-seg:nth-of-type(3) { animation-delay: .2s; }
+  .project-spine-seg:nth-of-type(4) { animation-delay: .26s; }
+  .project-spine-seg:nth-of-type(5) { animation-delay: .32s; }
+  .project-spine-seg:nth-of-type(6) { animation-delay: .38s; }
+  .project-spine-seg:nth-of-type(7) { animation-delay: .44s; }
+
+  /* empty-state invitation: an idea walks the unsewn thread, A → Z, forever */
+  .empty-thread-node { animation: node-walk 6.3s ease-in-out infinite; }
+  .empty-thread-node:nth-of-type(1) { animation-delay: 0s; }
+  .empty-thread-node:nth-of-type(2) { animation-delay: .4s; }
+  .empty-thread-node:nth-of-type(3) { animation-delay: .8s; }
+  .empty-thread-node:nth-of-type(4) { animation-delay: 1.2s; }
+  .empty-thread-node:nth-of-type(5) { animation-delay: 1.6s; }
+  .empty-thread-node:nth-of-type(6) { animation-delay: 2s; }
+  .empty-thread-node:nth-of-type(7) { animation-delay: 2.4s; }
+
+  /* hub rail: the station beads breathe on their own hue, alternating phase */
+  .stage-stop-node { animation: bead-glow 5.5s ease-in-out infinite; }
+  .stage-stop:nth-of-type(even) .stage-stop-node { animation-delay: -2.75s; }
+
+  /* primary CTA: calm sheen sweep on hover (suite grammar) */
+  .btn-fill { position: relative; overflow: hidden; }
+  .btn-fill::after {
+    content: ''; position: absolute; top: 0; bottom: 0; left: -70%; width: 45%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .3), transparent);
+    transform: skewX(-18deg); transition: left .6s var(--ease); pointer-events: none;
+  }
+  .btn-fill:hover::after { left: 125%; }
+}
+@keyframes seg-draw { from { transform: scaleX(.12); opacity: .25; } }
+@keyframes node-walk {
+  0%, 11%, 100% { transform: scale(1); box-shadow: 0 0 10px color-mix(in srgb, var(--sc, var(--warm-b)) 50%, transparent); }
+  5.5% { transform: scale(1.5); box-shadow: 0 0 18px color-mix(in srgb, var(--sc, var(--warm-b)) 95%, transparent); }
+}
+@keyframes bead-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--sc, var(--warm-b)) 16%, transparent),
+                0 0 14px color-mix(in srgb, var(--sc, var(--warm-b)) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--sc, var(--warm-b)) 9%, transparent),
+                0 0 24px color-mix(in srgb, var(--sc, var(--warm-b)) 85%, transparent);
+  }
+}
