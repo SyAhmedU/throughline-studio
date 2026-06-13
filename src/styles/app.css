@@ -372,8 +372,10 @@
   letter-spacing: -0.024em;
   margin: 0 0 18px;
 }
-/* the A→Z gets Fraunces' wonk character + a slow ambient drift along the gradient */
-.hero-title .grad-text {
+/* the A→Z gets Fraunces' wonk character + a slow ambient drift along the gradient
+   (shared with the Examples header so the emphasis idiom reads the same everywhere) */
+.hero-title .grad-text,
+.ex-title .grad-text {
   font-style: italic;
   font-weight: 500;
   padding-right: .06em;
@@ -381,7 +383,8 @@
   background-size: 220% 100%;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .hero-title .grad-text { animation: grad-drift 14s ease-in-out infinite alternate; }
+  .hero-title .grad-text,
+  .ex-title .grad-text { animation: grad-drift 14s ease-in-out infinite alternate; }
 }
 @keyframes grad-drift {
   from { background-position: 0% 50%; }
