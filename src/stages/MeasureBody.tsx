@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
+import XwalkChips from '../components/XwalkChips'
 import {
   domainsOf,
   loadScaleItems,
@@ -260,6 +261,8 @@ export function MeasureBody({
         </div>
       ) : (
         <>
+          {/* the framed constructs, linked across the suite via the Book's crosswalk */}
+          <XwalkChips labels={framedConstructs(frame)} />
           {suggestions.length > 0 && (
             <section className="bld-section">
               <h2 className="bld-h">Suggested from your framed constructs</h2>

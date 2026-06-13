@@ -10,6 +10,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { ReadingFacets } from '../components/ReadingFacets'
+import XwalkChips from '../components/XwalkChips'
+import { framedConstructs } from './MeasureBody'
 import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import { fmtLockDate, preregLock } from '../lib/prereg'
@@ -367,6 +369,9 @@ export function FrameBody({
           </p>
         )}
       </section>
+
+      {/* the framed constructs, linked across the suite via the Book's crosswalk */}
+      <XwalkChips labels={framedConstructs(form)} />
 
       {/* what the reading list grounds: theories to consider, constructs in play */}
       <ReadingFacets

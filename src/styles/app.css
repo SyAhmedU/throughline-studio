@@ -2098,6 +2098,45 @@
   * { animation: none !important; transition: none !important; }
 }
 
+/* ── XwalkChips — "Across the suite" strip for the framed constructs ──
+   Label-matched via the Research Book's published crosswalk (no AI); every
+   chip deep-links TheoryScope / ScaleScope / the Book. Always badged verify. */
+.xw-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--sc, var(--accent)) 5%, var(--surface));
+  border: 1px dashed color-mix(in srgb, var(--sc, var(--accent)) 36%, var(--line));
+  border-radius: var(--r);
+}
+.xw-lead {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.xw-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.xw-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-right: 2px; }
+.xw-chip {
+  font-size: 12px;
+  color: var(--ink-2);
+  text-decoration: none;
+  background: var(--bg-2);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
+}
+a.xw-chip:hover { color: var(--sc, var(--accent)); border-color: var(--sc, var(--accent)); border-style: solid; }
+.xw-note { font-size: 11px; color: var(--ink-mute); }
+@media (max-width: 860px), (pointer: coarse) {
+  .xw-chip { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
 /* ── ReadingFacets — "From your reading list" chips (stage-shared) ──
    Solid border = verbatim-verified item; dashed = unverified (evidence not
    found in the abstract). Actionable chips pick up the stage hue on hover. */
