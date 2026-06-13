@@ -58,10 +58,11 @@
 
 /* ── Light ───────────────────────────────────────────────────────────────── */
 [data-theme='light'] {
-  --bg: #faf7f5;
-  --bg-2: #fffdfb;
-  --surface: #ffffff;
-  --surface-2: #fbf6f8;
+  /* warm cream paper — same stock as the hub's atelier pass */
+  --bg: #faf5ec;
+  --bg-2: #fffdf8;
+  --surface: #fffefa;
+  --surface-2: #f7f0e6;
   --elev: rgba(255, 255, 255, .92);
   --line: rgba(40, 24, 50, .12);
   --line-2: rgba(40, 24, 50, .2);

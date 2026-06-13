@@ -72,7 +72,7 @@
   font-size: 18px;
   letter-spacing: -0.01em;
 }
-.bar-word-dim { color: var(--ink-mute); font-weight: 500; }
+.bar-word-dim { color: var(--ink-mute); font-weight: 400; font-style: italic; font-size: 0.92em; }
 .bar-link {
   display: inline-flex;
   align-items: center;
@@ -231,8 +231,8 @@
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
-  padding: 10px 16px;
-  border-radius: var(--r-sm);
+  padding: 10px 18px;
+  border-radius: var(--r-pill);
   border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
@@ -276,6 +276,7 @@
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
+  border-radius: var(--r-sm);
   justify-content: space-between;
   padding: 13px 16px;
 }
@@ -315,9 +316,22 @@
   width: 2px;
   height: 64px;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 70%, transparent);
-  opacity: 0.8;
+  opacity: 0.85;
 }
+/* the descender reads as a stitch being sewn downward (the line lives on a
+   ::before so the mask never clips the ::after bead) */
+.hero-thread::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 70%, transparent);
+  mask-image: repeating-linear-gradient(180deg, #000 0 6px, transparent 6px 11px);
+  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 6px, transparent 6px 11px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-thread { animation: thread-descend .9s var(--ease) both; transform-origin: top center; }
+}
+@keyframes thread-descend { from { transform: translateX(-50%) scaleY(0); } to { transform: translateX(-50%) scaleY(1); } }
 /* the thread ends in a small glowing bead — the product's signature mark */
 .hero-thread::after {
   content: '';
@@ -374,10 +388,12 @@
   to { background-position: 100% 50%; }
 }
 .hero-sub {
-  max-width: 620px;
+  max-width: 600px;
   margin: 0 auto 30px;
-  font-size: 16px;
-  line-height: 1.6;
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  font-size: 18px;
+  line-height: 1.55;
   color: var(--ink-2);
 }
 .hero-cta {
@@ -473,8 +489,8 @@
 .section-h2 {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 26px;
-  letter-spacing: -0.01em;
+  font-size: clamp(26px, 3.4vw, 34px);
+  letter-spacing: -0.018em;
   margin: 0;
 }
 .section-sub {
@@ -519,12 +535,16 @@
   top: 50%;
   height: 2px;
   background: linear-gradient(90deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
-  opacity: .28;
+  /* an unwalked thread is an unsewn one */
+  mask-image: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 12px);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 12px);
+  opacity: .45;
 }
 .empty-thread-cap {
   position: relative;
   z-index: 1;
   font-family: var(--serif);
+  font-style: italic;
   font-weight: 700;
   font-size: 15px;
   font-variation-settings: 'SOFT' 100, 'WONK' 1;
@@ -654,8 +674,13 @@
   background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
   pointer-events: none;
 }
-.stages-thread { opacity: .2; }
-.stages-thread-fill { opacity: 0; }
+/* the unwalked journey is an unsewn seam — dashed stitches the fill sews up */
+.stages-thread {
+  opacity: .3;
+  mask-image: repeating-linear-gradient(180deg, #000 0 7px, transparent 7px 14px);
+  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 7px, transparent 7px 14px);
+}
+.stages-thread-fill { opacity: 0; width: 3px; }
 /* scroll-driven fill — the thread is drawn as you walk the section
    (progressive enhancement; browsers without scroll timelines keep the calm static thread) */
 @supports (animation-timeline: view()) {
@@ -684,6 +709,7 @@
   height: 36px;
   border-radius: 50%;
   font-family: var(--serif);
+  font-style: italic;
   font-weight: 700;
   font-size: 16px;
   font-variation-settings: 'SOFT' 100, 'WONK' 1;
@@ -775,12 +801,17 @@
   margin: 0 0 12px;
 }
 .stage-chip-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+/* the carry is the whole point — a stitched ticket in the stage's own hue */
 .stage-chip-carry {
+  display: inline-block;
   font-family: var(--mono);
   font-size: 12px;
   color: var(--sc, var(--ink-mute));
   margin: 12px 0 0;
-  opacity: .9;
+  padding: 4px 11px;
+  border: 1px dashed color-mix(in srgb, var(--sc, var(--warm-b)) 42%, var(--line));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--sc, var(--warm-b)) 6%, transparent);
 }
 .tool-tag {
   font-size: 12px;
@@ -794,15 +825,25 @@
 
 /* ── Hub footer ────────────────────────────────────────────────────────── */
 .hub-foot {
+  position: relative;
   margin-top: 56px;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  border-top: 0;
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   font-size: 13px;
   color: var(--ink-mute);
+}
+/* the thread, tied off — gradient selvage band (suite-wide footer grammar) */
+.hub-foot::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--grad);
+  border-radius: 3px;
 }
 .hub-foot a { color: var(--ink-2); text-decoration: none; }
 .hub-foot a:hover { color: var(--accent); }
@@ -824,8 +865,11 @@
 .modal {
   width: 100%;
   max-width: 460px;
-  background: var(--surface);
-  border: 1px solid var(--line-2);
+  /* gradient hairline ring — the thread runs around the dialog */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, rgba(255, 150, 86, .5), rgba(241, 69, 117, .38), rgba(146, 112, 244, .5)) border-box;
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lift), var(--card-hi);
   padding: 26px;
@@ -949,15 +993,16 @@
   font-size: 12px;
   color: var(--ink-2);
   background: var(--bg-2);
-  border: 1px solid var(--line);
+  /* dashed = a stitch waiting to be picked up; solid accent once it's here */
+  border: 1px dashed var(--line-2);
   border-radius: var(--r-pill);
   padding: 5px 11px;
   cursor: pointer;
   transition: color 0.16s var(--ease), border-color 0.16s var(--ease);
 }
 .thread-tray-chip b { font-weight: 600; color: var(--ink); }
-.thread-tray-chip:hover { border-color: var(--accent); color: var(--accent); }
-.thread-tray-chip.is-here { border-color: var(--accent); }
+.thread-tray-chip:hover { border-color: var(--accent); border-style: solid; color: var(--accent); }
+.thread-tray-chip.is-here { border-color: var(--accent); border-style: solid; }
 .thread-tray-chip.is-here b { color: var(--accent); }
 .ws-body {
   display: grid;
@@ -998,7 +1043,10 @@
   bottom: 14px;
   width: 2px;
   background: linear-gradient(180deg, var(--warm-a), var(--warm-b) 50%, var(--warm-c));
-  opacity: .18;
+  /* unsewn seam — the bright fill below sews it shut as stages complete */
+  mask-image: repeating-linear-gradient(180deg, #000 0 6px, transparent 6px 12px);
+  -webkit-mask-image: repeating-linear-gradient(180deg, #000 0 6px, transparent 6px 12px);
+  opacity: .3;
 }
 .spine-list::after {
   content: '';
@@ -1113,8 +1161,8 @@
   flex-wrap: wrap;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: clamp(28px, 4vw, 38px);
-  letter-spacing: -0.015em;
+  font-size: clamp(30px, 4.4vw, 42px);
+  letter-spacing: -0.02em;
   margin: 0 0 12px;
 }
 .stage-title svg { color: var(--accent); }
@@ -1813,6 +1861,8 @@
 .ex-card {
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1821,7 +1871,12 @@
   cursor: pointer;
   transition: transform .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease);
 }
+.ex-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--grad); opacity: 0; transition: opacity .22s var(--ease);
+}
 .ex-card:hover { transform: translateY(-3px); border-color: var(--line-2); box-shadow: var(--shadow-lift), var(--card-hi); }
+.ex-card:hover::before { opacity: .9; }
 .ex-card-meta {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
@@ -1898,7 +1953,10 @@
   display: grid; place-items: center; width: 38px; height: 38px; flex: none;
   border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line-2); color: var(--accent); z-index: 1;
 }
-.cs-step-rail::after { content: ''; flex: 1; width: 2px; background: var(--line); margin: 4px 0; }
+.cs-step-rail::after {
+  content: ''; flex: 1; width: 2px; margin: 4px 0;
+  background: repeating-linear-gradient(180deg, var(--line-2) 0 6px, transparent 6px 12px);
+}
 .cs-step:last-child .cs-step-rail::after { display: none; }
 .cs-step-body { flex: 1; padding-bottom: 26px; min-width: 0; }
 .cs-step-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -1965,8 +2023,9 @@
 }
 .stage-chip::after {
   content: attr(data-n); position: absolute; right: 8px; bottom: -16px;
-  font: 600 84px/1 var(--serif); color: var(--sc, var(--warm-b));
-  opacity: .07; pointer-events: none;
+  font: italic 600 84px/1 var(--serif); color: var(--sc, var(--warm-b));
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  opacity: .08; pointer-events: none;
 }
 .stage-chip-icon {
   background: linear-gradient(135deg, color-mix(in srgb, var(--sc, var(--warm-b)) 76%, #ffd9b8), var(--sc, var(--warm-b)));
@@ -2002,9 +2061,10 @@
   .stage-grid { animation: rise .5s var(--ease) both; animation-delay: .07s; }
 }
 .stage-head::before {
-  content: attr(data-n); position: absolute; right: -6px; top: -30px;
-  font: 600 128px/1 var(--serif); color: var(--sc, var(--accent));
-  opacity: .055; pointer-events: none; user-select: none;
+  content: attr(data-n); position: absolute; right: -6px; top: -34px;
+  font: italic 600 148px/1 var(--serif); color: var(--sc, var(--accent));
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  opacity: .06; pointer-events: none; user-select: none;
 }
 .stage-num { color: var(--sc, var(--ink-mute)); font-weight: 600; }
 .stage[data-stage-n] .stage-brief-tag { color: var(--sc); }
