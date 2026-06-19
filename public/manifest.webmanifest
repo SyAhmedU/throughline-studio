@@ -1,0 +1,18 @@
+{
+  "name": "Throughline Studio",
+  "short_name": "Studio",
+  "description": "An A→Z research workspace unifying the whole suite.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#14111C",
+  "theme_color": "#14111C",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
