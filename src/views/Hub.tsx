@@ -69,6 +69,16 @@ export function Hub() {
               </button>
               <a
                 className="btn btn-ghost"
+                href="#/map"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate('/map')
+                }}
+              >
+                🧵 Knowledge graph
+              </a>
+              <a
+                className="btn btn-ghost"
                 href="#/examples"
                 onClick={(e) => {
                   e.preventDefault()
@@ -99,6 +109,16 @@ export function Hub() {
             <button className="btn btn-fill btn-lg" onClick={() => setShowNew(true)}>
               <Icon name="plus" size={17} /> New research project
             </button>
+            <a
+              className="btn btn-ghost btn-lg"
+              href="#/map"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate('/map')
+              }}
+            >
+              🧵 Explore the knowledge graph
+            </a>
             <a
               className="btn btn-ghost btn-lg"
               href="#/examples"

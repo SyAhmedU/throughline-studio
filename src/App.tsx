@@ -15,6 +15,10 @@ import { ProjectView } from './views/ProjectView'
 // it never weighs down the hub/workspace.
 const Examples = lazy(() => import('./views/Examples').then((m) => ({ default: m.Examples })))
 
+// The verified knowledge graph is its own chunk — it streams the corpus
+// snapshots, so it should never weigh down the hub.
+const GraphMap = lazy(() => import('./views/GraphMap').then((m) => ({ default: m.GraphMap })))
+
 export default function App() {
   const hash = useHash()
   const route = parseRoute(hash)
@@ -49,6 +53,10 @@ export default function App() {
         ) : route.name === 'examples' ? (
           <Suspense fallback={<div className="route-loading">Loading examples…</div>}>
             <Examples slug={route.slug} />
+          </Suspense>
+        ) : route.name === 'graph' ? (
+          <Suspense fallback={<div className="route-loading">Loading the verified graph…</div>}>
+            <GraphMap code={route.code} />
           </Suspense>
         ) : (
           <Hub />
