@@ -3,16 +3,20 @@
 // Built on the SAME Supabase project as the rest of the research suite
 // (research-suite/suite-auth.js), so a single account spans the suite. The
 // anon key is public by design — every row is protected by row-level security.
-// Override with VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY; if neither the env
-// nor the defaults are present, the app runs in "preview" mode (no login UI,
-// fully usable, local-only).
+// Configure with VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY; with neither set
+// the app runs in "preview" mode (no login UI, fully usable, local-only).
+//
+// NOTE: the previous hardcoded default pointed at a Supabase project that is
+// now NXDOMAIN — that kept isConfigured() true and showed a Sign-in that could
+// only ever fail. We deliberately ship NO default so the live app degrades to
+// the intended clean local-only mode. Wire a real project by setting the two
+// VITE_SUPABASE_* env vars in Vercel (no code change) and accounts return.
 // ============================================================================
 
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 
-const SUPA_URL = import.meta.env.VITE_SUPABASE_URL || 'https://hpupaqzebvrjhrpywtzl.supabase.co'
-const SUPA_ANON =
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_HwG-E4cFEuoeV_XlVxSrdA_E8x7UweQ'
+const SUPA_URL = import.meta.env.VITE_SUPABASE_URL || ''
+const SUPA_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export type { User }
 
