@@ -49,6 +49,18 @@ export function ProjectView({
     return project?.current ?? 'discover'
   }, [stageId, project?.current])
 
+  // Tab title carries project + stage — with a few projects open in tabs,
+  // the strip stays legible; reset on unmount so the hub gets its name back.
+  useEffect(() => {
+    if (project) {
+      const stage = STAGES.find((s) => s.id === active)
+      document.title = `${project.title.slice(0, 40)}${project.title.length > 40 ? '…' : ''} · ${stage?.title ?? ''} — Throughline Studio`
+    }
+    return () => {
+      document.title = 'Throughline Studio — conduct research, A → Z'
+    }
+  }, [project, active])
+
   if (!project) {
     return (
       <div className="notfound">
