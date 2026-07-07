@@ -366,6 +366,20 @@ function stageNumber(p: Project): number {
   return STAGES.findIndex((s) => s.id === p.current) + 1
 }
 
+// Common disciplines for this suite (OB/management-centred corpus). Offered as
+// one-tap chips so the field isn't a blank box — and, per the IKEA/endowment
+// effect, every small choice the user makes here is a bit of themselves
+// invested in the project before it even opens, which makes them far likelier
+// to carry it forward than an empty two-field form would.
+const FIELD_CHIPS = [
+  'Organizational Behavior',
+  'Management',
+  'Psychology',
+  'Human Resources',
+  'Marketing',
+  'Education',
+]
+
 function NewProjectModal({
   onClose,
   onCreate,
@@ -379,8 +393,8 @@ function NewProjectModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <h2 className="modal-title">New research project</h2>
-        <p className="modal-sub">A working title and field — both editable later.</p>
+        <h2 className="modal-title">Start your throughline</h2>
+        <p className="modal-sub">Just a working title to begin — everything's editable later, and the whole A→Z workspace opens the moment you do.</p>
         <label className="field-label" htmlFor="np-title">
           Title
         </label>
@@ -405,6 +419,29 @@ function NewProjectModal({
           onChange={(e) => setField(e.target.value)}
           placeholder="e.g. Organizational Behavior"
         />
+        <div className="np-field-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
+          {FIELD_CHIPS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`np-chip${field === f ? ' is-on' : ''}`}
+              aria-pressed={field === f}
+              onClick={() => setField(f)}
+              style={{
+                fontSize: 12.5,
+                padding: '5px 11px',
+                borderRadius: 999,
+                cursor: 'pointer',
+                border: '1px solid var(--line, rgba(128,128,128,.28))',
+                background: field === f ? 'var(--accent, #F14575)' : 'transparent',
+                color: field === f ? '#fff' : 'var(--ink-2, inherit)',
+                transition: 'background .15s, color .15s',
+              }}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onClose}>
             Cancel
