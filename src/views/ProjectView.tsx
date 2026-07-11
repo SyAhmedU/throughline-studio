@@ -5,10 +5,10 @@
 // that deep-links into every tool).
 // ============================================================================
 
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Icon } from '../components/Icon'
 import { Spine } from '../components/Spine'
-import { carrySummary } from '../lib/artifacts'
+import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { navigate } from '../lib/router'
 import { STAGE_IDS, STAGES } from '../lib/stages'
 import { getProject, saveProject, subscribe } from '../lib/store'
@@ -107,6 +107,22 @@ export function ProjectView({
           aria-label="Project title"
         />
         {project.field && <span className="ws-field">{project.field}</span>}
+        {/* SYED-CONCEPT · Mission Control: evidence coverage — stages that
+            actually carry artifacts (derived, never a vanity number) */}
+        {(() => {
+          const covered = STAGES.filter((s) => derivedStatus(project, s.id) !== 'todo').length
+          if (!covered) return null
+          const pct = Math.round((covered / STAGES.length) * 100)
+          return (
+            <span
+              className="ws-coverage"
+              title={`${covered} of ${STAGES.length} stages carry real artifacts (papers, hypotheses, scales, prereg, captures, drafts)`}
+            >
+              <span className="ws-coverage-ring" style={{ '--p': `${pct}%` } as CSSProperties} aria-hidden />
+              {covered}/{STAGES.length} evidenced
+            </span>
+          )
+        })()}
         <button
           className="btn btn-ghost btn-sm"
           onClick={exportProject}
