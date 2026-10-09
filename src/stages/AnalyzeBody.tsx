@@ -10,6 +10,7 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react'
+import ResearchKitchen from '../components/ResearchKitchen'
 import { Icon } from '../components/Icon'
 import { ReadingFacets } from '../components/ReadingFacets'
 import {
@@ -355,10 +356,10 @@ export function AnalyzeBody({
   if (!ds) {
     return (
       <div className="anz">
+        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds}/>
         <h2 className="stage-h2">Bring in your data</h2>
         <p className="stage-note-line">
-          Paste a table, upload a CSV/TSV, or load a simulated demo. Everything runs in your browser —
-          nothing is uploaded.
+          Paste a table, upload a CSV/TSV, or load a simulated demo. Calculations run in your browser. Project records follow your workspace’s save and sync settings.
         </p>
         <textarea
           className="anz-paste"
@@ -401,6 +402,7 @@ export function AnalyzeBody({
 
   return (
     <div className="anz">
+        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds}/>
       {/* dataset summary */}
       <div className="anz-ds">
         <div className="anz-ds-top">
@@ -437,17 +439,12 @@ export function AnalyzeBody({
       )}
       {nestedDesign && (
         <p className="anz-warn">
-          Design on file: <strong>nested / repeated observations</strong>. Every test in this embedded engine assumes
-          independent rows — clustered data violate that, so flat results here overstate significance. Use multilevel
-          models for the focal tests (not available in this engine); treat anything computed below as descriptive
-          only, and say which level each claim lives at.
+          Design on file: <strong>nested / repeated observations</strong>. Use the Kitchen’s mixed-model route for focal analyses. The basic tests below assume independent rows and are unsuitable for clustered inference; report the level of each claim.
         </p>
       )}
       {qualDesign && (
         <p className="anz-warn">
-          Design on file: <strong>qualitative</strong>. This engine is quantitative — for your focal analysis, code
-          themes in ToolsScope's qualitative workbench (highlight-and-code, themes, co-occurrence) via the link
-          below. Numbers computed here apply only to any supplementary quantitative data you collected.
+          Design on file: <strong>qualitative</strong>. Use the Kitchen’s qualitative bench for exact-passage coding, memos and visual evidence maps. Basic numerical tests below apply only to supplementary quantitative data.
         </p>
       )}
 
@@ -490,8 +487,8 @@ export function AnalyzeBody({
 
       {/* analysis picker */}
       <div className="anz-ds" style={{marginBottom:16}}>
-        <h3>Open-source advanced engines</h3>
-        <p className="anz-ds-meta">Run actual lavaan, lme4, mice, metafor and fixest in ToolsScope. Export this dataset, upload the JSON in ToolsScope’s Data tab, then import its run JSON here. Participant data stay in files you control; they are never placed in a URL.</p>
+        <h3>Optional file transfer and external run import</h3>
+        <p className="anz-ds-meta">The Kitchen above runs the advanced engines directly in this study. These file controls remain available for moving a dataset or importing an older ToolsScope result. Data are never placed in the deep-link URL.</p>
         <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
           <button className="btn btn-fill btn-sm" onClick={exportToOpenEngine}>Export dataset for ToolsScope</button>
           {([['sem','SEM / CFA'],['invariance','Invariance'],['growth','Growth'],['mixed','Random slopes'],['impute','Missing data'],['mediation','Mediation'],['meta','Meta-analysis'],['panel','Panel models']] as const).map(([id,label])=><a key={id} className="btn btn-ghost btn-sm" href={`https://toolsscope.vercel.app/?workflow=${id}`} target="_blank" rel="noreferrer">{label} ↗</a>)}

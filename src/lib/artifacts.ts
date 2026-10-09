@@ -37,7 +37,9 @@ export function carrySummary(p: Project, stageId: StageId): string | null {
     }
     case 'analyze': {
       const n = count(data('analyze').captures)
-      return n ? `${n} ${n === 1 ? 'result' : 'results'} captured` : null
+      const k = data('analyze').kitchen as {documents?:unknown[];passages?:unknown[];joints?:unknown[]} | undefined
+      const parts=[n?`${n} results captured`:null,k?.passages?.length?`${k.passages.length} coded passages`:null,k?.joints?.length?`${k.joints.length} joint displays`:null,k?.documents?.length?`${k.documents.length} source documents`:null].filter(Boolean)
+      return parts.length?parts.join(' · '):null
     }
     case 'write': {
       const w = data('write')

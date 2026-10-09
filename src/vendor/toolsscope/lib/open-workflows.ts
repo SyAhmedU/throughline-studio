@@ -1,0 +1,82 @@
+import papers from './journal-evidence.json' with { type: 'json' };
+
+export type WorkflowId = 'sem' | 'invariance' | 'growth' | 'mediation' | 'mixed' | 'impute' | 'meta' | 'panel' | 'survival' | 'gam' | 'quantile' | 'equivalence';
+export interface Workflow {
+  id: WorkflowId; name: string; package: string; replaces: string; purpose: string;
+  data: string; limits: string; outputs: string[]; steps: string[]; sources: string[]; docs: string;
+}
+export const WORKFLOWS: Workflow[] = [
+  { id:'sem', name:'CFA & structural equation models', package:'lavaan', replaces:'Selected AMOS / LISREL / Mplus workflows',
+    purpose:'Estimate measurement models and structural paths using the actual lavaan engine, including robust ML, FIML or ordinal WLSMV.',
+    data:'One row per independent participant; item-level numeric columns. Use the displayed v1, v2… aliases in model syntax.',
+    limits:'Model identification and substantive validity remain your responsibility. Ordinal WLSMV uses listwise deletion here; FIML is for continuous ML/MLR only. This is covariance-based SEM, not a PLS-SEM substitute.',
+    outputs:['Parameter estimates, SEs and CIs','Standardized solutions and R²','Fit indices, convergence and admissibility checks'],
+    steps:['Frame a theoretically justified measurement and path model in ResearchFlow / TheoryScope.','Select item-level measures from ScaleScope; record adaptations.','Fit competing theory-specified models here; retain all runs and warnings.','Carry the actual output to Studio and report estimator, missing-data treatment and model changes.'],
+    sources:['10.1146/annurev-orgpsych-041621-031401','10.1111/1467-8551.12415'], docs:'https://lavaan.ugent.be/tutorial/' },
+  { id:'invariance', name:'Measurement invariance across groups', package:'lavaan', replaces:'Multi-group CFA in AMOS / Mplus',
+    purpose:'Fit configural, metric and scalar models, retaining fit changes and robust nested-model comparison output.',
+    data:'Continuous indicators plus a grouping variable with at least two groups. Specify only the measurement model.',
+    limits:'Continuous-indicator MLR/FIML workflow. No automatic item deletion, partial-invariance search or threshold-invariance claims for ordinal data. Fit-change thresholds are not universal pass/fail rules.',
+    outputs:['All three model fit tables','Metric/configural and scalar/metric fit changes','Scaled likelihood-ratio comparisons and group counts'],
+    steps:['Define the groups and comparable constructs before testing group differences.','Specify the same theoretically defensible measurement structure.','Inspect configural, loading and intercept constraints in sequence.','Explain noninvariance before interpreting latent mean comparisons.'],
+    sources:['10.1177/1094428102005002001'], docs:'https://lavaan.ugent.be/tutorial/groups.html' },
+  { id:'growth', name:'Latent growth trajectories', package:'lavaan', replaces:'Selected longitudinal Mplus growth models',
+    purpose:'Estimate latent intercept and slope means, variances and covariance with user-specified observation times.',
+    data:'Wide-format continuous repeated outcomes, three or more waves, one row per person. Supply actual relative times in wave order.',
+    limits:'Linear trajectory only; independent persons. Longitudinal measurement comparability, attrition and functional form need assessment. No growth mixture or dynamic SEM.',
+    outputs:['Intercept/slope estimates','Model fit and missingness record','Observed wave means for a trajectory plot'],
+    steps:['Plan waves and attrition in Studio Collect / Cadence.','Use stable participant IDs to reshape repeated outcomes to wide format.','Specify relative measurement times and fit a linear growth model.','Report change heterogeneity, missingness assumptions and model limitations.'],
+    sources:['10.1002/job.1803','10.1146/annurev-orgpsych-041621-031401'], docs:'https://lavaan.ugent.be/tutorial/growth.html' },
+  { id:'mediation', name:'Bootstrap indirect effects', package:'lavaan', replaces:'Simple observed-variable PROCESS Model 4 workflow',
+    purpose:'Fit X → M → Y paths with a direct path and percentile bootstrap confidence intervals for the indirect effect.',
+    data:'Independent rows; numeric X, mediator and Y. Complete-case, continuous ML estimation; a reproducible bootstrap seed.',
+    limits:'Single mediator, no automatic covariates or causal identification. Cross-sectional indirect associations do not establish a temporal or causal mechanism. No claim of full PROCESS equivalence.',
+    outputs:['a, b, direct, indirect and total effects','Percentile bootstrap intervals','Seed, requested replicates and engine warnings'],
+    steps:['Specify the proposed temporal mechanism and possible confounders.','Choose an appropriate design before interpreting a causal pathway.','Run the preregistered path model and bootstrap interval.','Report the design limits even if the indirect-effect interval excludes zero.'],
+    sources:['10.1146/annurev-orgpsych-041621-031401','10.1002/job.722'], docs:'https://lavaan.ugent.be/tutorial/mediation.html' },
+  { id:'mixed', name:'Diary / multilevel random slopes', package:'lme4', replaces:'Selected HLM / SPSS MIXED / GLMM workflows',
+    purpose:'Estimate a random-intercept/random-slope model; optionally separate within-person and between-person predictor effects.',
+    data:'Long-format rows nested in a group/person ID; numeric outcome and predictors. Optional slope predictor must also be a fixed predictor.',
+    limits:'One grouping factor; Gaussian, Bernoulli-logit or Poisson-log models. No autocorrelation model, crossed effects, overdispersion correction or causal guarantee. Gaussian lme4 t ratios are shown without invented p values.',
+    outputs:['Fixed effects and Wald intervals','Random-effect variance/correlation table','Singularity, convergence and residual records'],
+    steps:['Design repeated sampling in Cadence and preserve person/day IDs.','Distinguish within-person fluctuation from between-person differences.','Specify justified random slopes; inspect singularity and residual dependence.','Report number of groups, observations, centering and random-effects structure.'],
+    sources:['10.1002/job.1803','10.1002/job.2796','10.1002/job.722'], docs:'https://lme4.github.io/lme4/reference/lmer.html' },
+  { id:'impute', name:'Multiple imputation & pooled regression', package:'mice', replaces:'Selected SPSS / Stata MI regression workflows',
+    purpose:'Run predictive mean matching across multiple imputations and pool OLS estimates using Rubin’s rules.',
+    data:'Independent rows and continuous numeric outcome, predictors and optional auxiliary variables; actual missing cells retained.',
+    limits:'Single-level continuous-data PMM only. MAR is an assumption, not a test result. No automatic imputation of identifiers, nested structures, categorical variables or MNAR correction.',
+    outputs:['Pooled estimates, CIs and missing-information diagnostics','Chain mean/variance summaries and logged events','Complete-case comparator on the same analysis variables'],
+    steps:['Describe missingness and why the proposed imputation model is defensible.','Include relevant continuous auxiliary variables without treating IDs as predictors.','Inspect chains and logged events; increase iterations/imputations when needed.','Compare pooled and complete-case results and report assumptions and sensitivity limitations.'],
+    sources:['10.1177/1094428114548590'], docs:'https://amices.org/mice/reference/mice.html' },
+  { id:'meta', name:'REML meta-analysis & meta-regression', package:'metafor', replaces:'Selected Comprehensive Meta-Analysis workflows',
+    purpose:'Estimate random-effects synthesis using REML and Knapp–Hartung inference, with optional numeric moderators.',
+    data:'One independent effect per study, effect estimate yi and strictly positive sampling variance vi, all in the same metric.',
+    limits:'You must derive yi/vi correctly. Correlations usually need a justified Fisher-z transformation. Dependent effects, psychometric artifact correction and multivariate models are not handled by this recipe. Funnel asymmetry is not proof of publication bias.',
+    outputs:['Pooled/moderator estimates, heterogeneity and prediction interval','Study estimates for forest/funnel plots','Leave-one-out results for intercept-only models'],
+    steps:['Search and screen with a protocol; retain inclusion/exclusion decisions.','Extract and independently verify each effect and variance against its source.','Run synthesis and pre-specified moderators; inspect influential studies.','Report search, coding, dependence decisions, sensitivity and uncertainty.'],
+    sources:['10.1177/1094428120967089','10.1146/annurev-orgpsych-031921-021922'], docs:'https://wviechtb.github.io/metafor/reference/rma.uni.html' },
+  { id:'panel', name:'Panel fixed effects with clustered inference', package:'fixest', replaces:'Selected Stata reghdfe / panel OLS workflows',
+    purpose:'Estimate unit and time fixed effects with standard errors clustered by unit.',
+    data:'Long-format panel: unique unit × time rows, continuous outcome and numeric time-varying predictors.',
+    limits:'This is a two-way fixed-effects association model. It is not an automatic difference-in-differences design, event study or remedy for heterogeneous staggered treatment effects. Identification and clustering level need justification.',
+    outputs:['Clustered coefficient estimates and confidence intervals','Within R² and observation counts','Removed-observation and collinearity messages'],
+    steps:['Specify the identifying variation and plausible time-varying confounders.','Check unique unit/time observations and within-unit predictor variation.','Estimate unit and time effects with explicit clustering.','For causal claims, separately establish the design and required assumptions; do not infer causality from fixed effects alone.'],
+    sources:['10.1002/smj.3714'], docs:'https://lrberge.github.io/fixest/reference/feols.html' },
+  {id:'survival',name:'Time-to-event & survival',package:'survival',replaces:'Selected SPSS / Stata survival workflows',purpose:'Fit a Cox proportional-hazards model and inspect observed Kaplan–Meier survival with risk counts.',data:'One independent person per row; positive follow-up time, event coded 0/1, numeric predictors.',limits:'Right censoring only. No recurrent events, competing risks or time-varying covariates. Inspect proportional-hazards diagnostics; the pooled Kaplan–Meier curve is descriptive, not an adjusted prediction.',outputs:['Log hazard ratios, SEs and 95% intervals','Hazard ratios and proportional-hazards tests','Kaplan–Meier curve, intervals and risk counts'],steps:['Define the event, time origin and censoring rules before analysis.','Record one risk episode per person.','Fit the Cox model and inspect PH diagnostics.','Report censoring, risk sets and interpretation of hazard ratios.'],sources:['10.1111/j.2517-6161.1972.tb00899.x'],docs:'https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html'},
+  {id:'gam',name:'Nonlinear additive relationships',package:'mgcv',replaces:'Selected spline and GAM workflows',purpose:'Fit a Gaussian GAM with one penalized smooth and optional linear covariates, choosing smoothness by REML.',data:'Independent rows; continuous outcome, one continuous smooth predictor and optional numeric linear covariates.',limits:'Gaussian identity-link model with one smooth. Not causal evidence; pointwise mean intervals are not prediction or simultaneous intervals. Inspect basis adequacy and residual patterns.',outputs:['Smooth significance and estimated degrees of freedom','Partial relationship curve with pointwise 95% mean intervals','Basis diagnostic and residual-versus-fitted data'],steps:['Justify a nonlinear relationship before fitting.','Choose the smooth predictor and potential confounders.','Inspect the curve, residuals and basis diagnostic.','Report basis size, REML fitting and uncertainty.'],sources:['10.1111/j.1467-9868.2010.00749.x'],docs:'https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/gam.html'},
+  {id:'quantile',name:'Conditional quantile regression',package:'quantreg',replaces:'Selected Stata / SAS quantile workflows',purpose:'Estimate a specified conditional quantile and compare slopes across the lower quartile, median and upper quartile.',data:'Independent rows; continuous outcome and numeric predictors.',limits:'Pairs-bootstrap SEs with normal-Wald intervals. Independent observations only, no clustered bootstrap. Quantiles describe the conditional outcome distribution, not individual causal effects.',outputs:['Selected-quantile coefficients and intervals','Coefficient profiles at tau .25, .50 and .75','Seed and bootstrap replication record'],steps:['Specify the quantile of substantive interest.','Prepare predictors without choosing the model for significance.','Inspect selected estimates and the quantile profile.','Report bootstrap scheme, uncertainty and sensitivity.'],sources:['10.2307/1913643'],docs:'https://cran.r-project.org/package=quantreg'},
+  {id:'equivalence',name:'Equivalence with prespecified bounds',package:'stats',replaces:'Independent-samples Welch TOST',purpose:'Test whether a two-group mean difference is sufficiently small using two one-sided Welch tests.',data:'Independent continuous outcomes and exactly two groups; lower and upper equivalence bounds in outcome units.',limits:'Bounds must be substantively justified before inspecting results. Alpha .05, 90% CI for TOST. A nonsignificant difference is not evidence of equivalence. No paired, clustered or standardized-bound conversion.',outputs:['Both one-sided p values and TOST decision','Mean difference with 90% and 95% intervals','Group summaries and Welch degrees of freedom'],steps:['State the smallest meaningful difference and justify both bounds.','Check independent groups and outcome units.','Run both one-sided tests and compare the 90% interval to the bounds.','Report equivalence and difference questions separately.'],sources:['10.1177/1948550617697177'],docs:'https://stat.ethz.ch/R-manual/R-devel/library/stats/html/TDist.html'},
+
+];
+export const JOURNAL_PAPERS = papers;
+export const JOURNAL_POLICIES = [
+  {journal:'Journal of Applied Psychology',url:'https://www.apa.org/pubs/journals/apl/submit',checked:'2026-10-10',finding:'Disclose availability of data, code and materials, preregistration status and compliance with the journal methods checklist. Disclosure is not the same as mandatory public release of restricted data.'},
+  {journal:'Academy of Management Journal',url:'https://aom.org/research/journals/journal',checked:'2026-10-10',finding:'Welcomes multiple empirical approaches and expects empirical and theoretical contributions. A more complicated statistical model alone does not establish contribution.'},
+];
+export const COMPANION_TOOLS = [
+  {name:'jamovi',url:'https://www.jamovi.org/',use:'Desktop GUI for R-based statistics; an option when you want a graphical workflow outside the browser.',suite:'ToolsScope exports data and scripts; no automatic jamovi project import.'},
+  {name:'JASP',url:'https://jasp-stats.org/',use:'Open-source desktop Bayesian and frequentist analysis.',suite:'Use alongside ToolsScope when the required model is not supported here; retain output and software versions.'},
+  {name:'QualCoder',url:'https://qualcoder.wordpress.com/',use:'Open-source qualitative coding environment for larger text/audio/video projects.',suite:'ToolsScope Qual supports lightweight coding; use an external project archive for richer qualitative work.'},
+  {name:'ASReview',url:'https://asreview.nl/',use:'Open-source active-learning-assisted literature screening.',suite:'Research Book supplies discovery; keep a separate screening log and validate recall. AI ranking never replaces eligibility decisions.'},
+  {name:'Zotero',url:'https://www.zotero.org/',use:'Open-source reference manager for citations, attachments and bibliographies.',suite:'Use DOI-backed references from Research Book and verify the manuscript bibliography in JournalTime.'},
+];

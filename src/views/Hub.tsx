@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react'
+import KitchenWelcome from '../components/KitchenWelcome'
 import { Icon } from '../components/Icon'
 import { VideoLightbox } from '../components/VideoLightbox'
 import { derivedStatus } from '../lib/artifacts'
@@ -55,6 +56,7 @@ export function Hub() {
     // main#main: the skip-link target and screen-reader landmark — ProjectView
     // carries its own; every routed view needs one
     <main className="hub" id="main">
+      <KitchenWelcome projects={projects}/>
       {/* ── Hero — full pitch for strangers, a slim band for returners ── */}
       {returning ? (
         <section className="hero hero-compact">
