@@ -2373,3 +2373,6 @@ button.rfx-chip:hover { color: var(--accent); border-color: var(--accent); }
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
 }
+
+/* Keep project backup and evidence controls reachable on narrow screens. */
+@media(max-width:600px){.ws-header{flex-wrap:wrap}.ws-title-input{flex:1 1 160px;min-width:0}.ws-coverage{max-width:100%}}
