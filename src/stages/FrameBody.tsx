@@ -16,7 +16,7 @@ import { generate } from '../lib/api'
 import { readingList } from '../lib/corpus'
 import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef, toolLabel } from '../lib/stages'
-import { saveProject } from '../lib/store'
+import { getProject, saveProject } from '../lib/store'
 import {
   loadTheories,
   loadTheoryUsage,
@@ -73,35 +73,25 @@ export function FrameBody({
     hypotheses: stored.hypotheses || [],
     theory: stored.theory || null,
   })
-  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }))
-
-  // debounced persist (question → project root; rest → frame.data); flush on unmount
-  const timer = useRef<number | undefined>(undefined)
+  // Local edits are durable immediately; sync.ts debounces cloud writes.
+  // React unmount cleanup does not run on a browser reload or tab close.
   const projRef = useRef(project)
   projRef.current = project
   const formRef = useRef(form)
   formRef.current = form
-  const first = useRef(true)
-  function persist(notify: boolean) {
-    const p = projRef.current
-    const { question, ...fd } = formRef.current
+  function set(patch: Partial<typeof form>) {
+    const next = { ...formRef.current, ...patch }
+    formRef.current = next
+    setForm(next)
+    const p = getProject(project.id) || projRef.current
+    const { question, ...fd } = next
     const saved = saveProject({
       ...p,
       question,
-      stages: { ...p.stages, frame: { ...p.stages.frame, data: fd } },
+      stages: { ...p.stages, frame: { ...p.stages.frame, data: fd, updatedAt: Date.now() } },
     })
-    if (notify) onChange(saved)
+    onChange(saved)
   }
-  useEffect(() => {
-    if (first.current) {
-      first.current = false
-      return
-    }
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => persist(true), 350)
-    return () => window.clearTimeout(timer.current)
-  }, [form])
-  useEffect(() => () => persist(false), []) // flush latest on unmount
 
   // theory grounding
   const [tq, setTq] = useState('')
