@@ -3,13 +3,13 @@
   "files": {
     "lib/open-engine.ts": "af7dbb3a953dafbb7bf6c94d356a9022b30711b7ac3f27bd16673c1c4157f21d",
     "lib/open-workflows.ts": "f99d22b6e8366aaac940eff76d7d50496ec53091ff5ddab5406d1f14e07ef210",
-    "lib/journal-evidence.json": "f3bfe9cc405937fcf1168f0cb79a4d1cde176f867a852cb327a128a41cdce24c",
+    "lib/journal-evidence.json": "1092b8909a881832bba07ec67bed9dff1125204e3cf713db48d7ffc669d71a55",
     "lib/types.ts": "ec1d4a014179867f6e3af5e893d0a4c631f0d5d3ea6ac8316c73bb65e9830940",
     "lib/advanced.ts": "9366ddad8c7f163df5d9496464b004f45d37aa4d45728d1244acb41538e863f0",
-    "lib/stats.ts": "6cb11a2d2af068c8ba8fb7f795413fceaee67a8c13c3aabc9cc073ad7d10f384",
-    "components/OpenWorkbench.tsx": "04799f81fa83ad7dbc4dd7a6de94395289c6a15f04025b497b1d3dbbea412f44",
+    "lib/stats.ts": "93edaf35c38f49a093e64793d713ddd4f460234dbf94b4fa0a41be6ca289425b",
+    "components/OpenWorkbench.tsx": "b50ce33b7609a327030c27e39cfc5abfb57481e21682e2b968776e828606889f",
     "components/OpenWorkbench.css": "c4c97788d26b8a7844ab1d5274e60eee088c8413974f5f051cbdbf742d885531",
-    "components/MethodVisuals.tsx": "49b74051b0e7285c9ff00bea907a6b9055b39585686c0aa2a860c213fb336ad0",
+    "components/MethodVisuals.tsx": "d0b9856dd693e9d2ce27af067f8034a0cbd74c8b61751bcf63307e01c51a2e21",
     "components/ResearchLab.css": "d5016f651f9fb0a70d76ba2eeaa925d70389949e89e99a8cb4958d639e3d3ea9"
   }
 }

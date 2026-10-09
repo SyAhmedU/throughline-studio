@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",
-    "test:kitchen": "node kitchen.verify.ts",
+    "test:kitchen": "node kitchen.verify.ts && node scripts/verify-engine-snapshot.mjs",
     "sync:engines": "node scripts/sync-research-engines.mjs"
   },
   "dependencies": {
