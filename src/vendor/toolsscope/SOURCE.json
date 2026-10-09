@@ -7,7 +7,7 @@
     "lib/types.ts": "ec1d4a014179867f6e3af5e893d0a4c631f0d5d3ea6ac8316c73bb65e9830940",
     "lib/advanced.ts": "9366ddad8c7f163df5d9496464b004f45d37aa4d45728d1244acb41538e863f0",
     "lib/stats.ts": "6cb11a2d2af068c8ba8fb7f795413fceaee67a8c13c3aabc9cc073ad7d10f384",
-    "components/OpenWorkbench.tsx": "fbf3a00a9ec35d4b80b52f100457ac8168ec1368bdbd78c701b299547a51f186",
+    "components/OpenWorkbench.tsx": "04799f81fa83ad7dbc4dd7a6de94395289c6a15f04025b497b1d3dbbea412f44",
     "components/OpenWorkbench.css": "c4c97788d26b8a7844ab1d5274e60eee088c8413974f5f051cbdbf742d885531",
     "components/MethodVisuals.tsx": "49b74051b0e7285c9ff00bea907a6b9055b39585686c0aa2a860c213fb336ad0",
     "components/ResearchLab.css": "d5016f651f9fb0a70d76ba2eeaa925d70389949e89e99a8cb4958d639e3d3ea9"

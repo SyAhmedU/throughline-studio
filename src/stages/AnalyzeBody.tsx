@@ -356,7 +356,7 @@ export function AnalyzeBody({
   if (!ds) {
     return (
       <div className="anz">
-        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds}/>
+        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds} onLoadDataset={adopt}/>
         <h2 className="stage-h2">Bring in your data</h2>
         <p className="stage-note-line">
           Paste a table, upload a CSV/TSV, or load a simulated demo. Calculations run in your browser. Project records follow your workspace’s save and sync settings.
@@ -402,7 +402,7 @@ export function AnalyzeBody({
 
   return (
     <div className="anz">
-        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds}/>
+        <ResearchKitchen key={project.id} project={project} onChange={onChange} dataset={ds} onLoadDataset={adopt}/>
       {/* dataset summary */}
       <div className="anz-ds">
         <div className="anz-ds-top">
