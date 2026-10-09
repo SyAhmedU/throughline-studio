@@ -562,7 +562,7 @@ export function AnalyzeBody({
               <li key={c.id}>
                 <div>
                   <span className="anz-cap-title">{c.title}</span>
-                  <p className="anz-cap-apa">{c.apa}</p>
+                  {c.apa.length>1200?<details><summary>Inspect full result record, warnings and software provenance</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',maxHeight:440,overflow:'auto',fontSize:12,lineHeight:1.7}}>{c.apa}</pre></details>:<p className="anz-cap-apa">{c.apa}</p>}
                 </div>
                 <button className="icon-btn" aria-label="Remove" onClick={() => removeCapture(c.id)}>
                   <Icon name="trash" size={14} />
