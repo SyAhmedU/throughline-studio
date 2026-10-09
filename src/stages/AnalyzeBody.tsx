@@ -34,6 +34,8 @@ import {
 } from '../lib/stats'
 import { setStageData } from '../lib/store'
 import type { Project } from '../lib/types'
+import {toolsDataset,importOpenRun} from '../lib/openAnalysis'
+import type {ImportedOpenRun} from '../lib/openAnalysis'
 
 type Analysis = 'descriptives' | 'correlations' | 'reliability' | 'ttest' | 'anova'
 const ANALYSES: { key: Analysis; label: string }[] = [
@@ -274,6 +276,24 @@ export function AnalyzeBody({
   // (mediation, regression, CFA…) can be pasted back so the analysis log and
   // Write-stage pull contain the focal test too — provenance kept in the title
   const [extText, setExtText] = useState('')
+  const [openImportMessage,setOpenImportMessage]=useState('')
+  function exportToOpenEngine(){
+    if(!ds)return
+    const payload={schema:'toolsscope-dataset-1',project:{id:project.id,title:project.title},dataset:toolsDataset(ds)}
+    const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='studio-dataset.json';a.click();URL.revokeObjectURL(url)
+  }
+  async function importEngineResult(file:File){
+    try{
+      if(file.size>2_000_000)throw Error('Run file exceeds 2 MB.')
+      const run=await importOpenRun(await file.text(),ds)
+      const prior=((project.stages.analyze.data||{}).openEngineRuns||[]) as ImportedOpenRun[]
+      if(prior.some(r=>r.id===run.id))throw Error('This run is already attached to the study.')
+      const title=`R engine: ${run.workflow} — ${run.datasetName}${run.matchedDataset?'':' (dataset match not established)'}`
+      const text=`Imported actual R output. Dataset match: ${run.matchedDataset?'verified against current data':'not established; verify original data and variable types'}.\nRun ${run.id}; SHA-256 ${run.hash}.\n\n${run.report}`
+      onChange(setStageData(project,'analyze',{...(project.stages.analyze.data||{}),openEngineRuns:[...prior,{...run,report:''}],captures:[{id:run.id,title,apa:text,at:Date.now()},...captures]}))
+      setOpenImportMessage(`Imported ${run.workflow}; ${run.warnings.length} engine warnings retained. ${run.matchedDataset?'Dataset fingerprint matches.':'Dataset fingerprint does not match; review before writing.'}`)
+    }catch(e){setOpenImportMessage(e instanceof Error?e.message:String(e))}
+  }
   function addExternal() {
     const t = extText.trim()
     if (!t) return
@@ -469,6 +489,17 @@ export function AnalyzeBody({
       />
 
       {/* analysis picker */}
+      <div className="anz-ds" style={{marginBottom:16}}>
+        <h3>Open-source advanced engines</h3>
+        <p className="anz-ds-meta">Run actual lavaan, lme4, mice, metafor and fixest in ToolsScope. Export this dataset, upload the JSON in ToolsScope’s Data tab, then import its run JSON here. Participant data stay in files you control; they are never placed in a URL.</p>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+          <button className="btn btn-fill btn-sm" onClick={exportToOpenEngine}>Export dataset for ToolsScope</button>
+          {([['sem','SEM / CFA'],['invariance','Invariance'],['growth','Growth'],['mixed','Random slopes'],['impute','Missing data'],['mediation','Mediation'],['meta','Meta-analysis'],['panel','Panel models']] as const).map(([id,label])=><a key={id} className="btn btn-ghost btn-sm" href={`https://toolsscope.vercel.app/?workflow=${id}`} target="_blank" rel="noreferrer">{label} ↗</a>)}
+        </div>
+        <label style={{display:'block',marginTop:14}}>Import an actual ToolsScope R run <input type="file" accept=".json" onChange={e=>{const f=e.target.files?.[0];if(f)void importEngineResult(f);e.target.value=''}}/></label>
+        {openImportMessage&&<p role="status" className="anz-warn">{openImportMessage}</p>}
+        <p className="anz-fineprint">Imported results carry into Write through the existing captures. Full reproduction ZIPs remain your external archive; this study retains the result text, warnings and software provenance.</p>
+      </div>
       <div className="anz-tabs" role="tablist">
         {ANALYSES.map((a) => (
           <button
