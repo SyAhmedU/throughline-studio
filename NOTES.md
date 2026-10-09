@@ -16,3 +16,10 @@
 - **Worked examples** (`lib/caseStudies.ts` + `views/Examples.tsx`, `#/examples`, lazy): **20 DOI-verified papers by pace** (`tier?`/`paceOf()`, 10 long + 10 quick) — each walked A→Z (facts hand-verified via Crossref; the 7-stage journey labelled **illustrative**; retracted/failed-replication work avoided).
 - **Videos:** hub hero = 88s tour (`public/tour.mp4`+poster); each worked example ~2-min walkthrough (posters local; 20 MP4s ~134 MB from **`SyAhmedU/throughline-media`** Pages). Pipeline: `scripts/export-case-studies.mjs` → `E:\video\throughline-explainer` (narration VERBATIM from caseStudies → `render-cases.ps1`, resumable; **PS1 scripts must be ASCII** — PS 5.1 reads no-BOM UTF-8 as ANSI; Remotion scale 0.6; edge-tts `en-US-AndrewNeural`).
 - **LIVE** — auto-deploys → throughline-studio.vercel.app. Cloud accounts live (Supabase restored 2026-10-09).
+
+
+## 2026-10-10 — Latest-data control
+
+A non-destructive **↻ Latest data** panel checks this app's named published reference files and searches current Crossref journal-article metadata. Source/build dates are distinguished from the time of checking; failed checks retain previous successful evidence. Fetched files and metadata can be downloaded. It never clears saved work, resets survey responses, replaces selected scales, regenerates AI text or reloads the current workspace. Curated catalogues, full corpus harvests, publisher policies and current Scopus verification require their separate maintained source workflows. Existing in-memory results remain unchanged.
+
+Canonical source/config: `research-suite/tools/refresh/{research-refresh.js,install.mjs}` in the sibling repository. Run the installer after changes; local script copies are shipped per app. Generated service workers bypass explicit no-store/research_refresh requests.
