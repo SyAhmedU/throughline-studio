@@ -13,6 +13,8 @@ import { navigate } from '../lib/router'
 import { STAGE_IDS, STAGES } from '../lib/stages'
 import { getProject, saveProject, subscribe } from '../lib/store'
 import type { Project, StageId } from '../lib/types'
+import { StudyJourney } from '../components/StudyJourney'
+import { seedArchivedPlan, flowTitle } from '../lib/studyFlow'
 import { StageShell } from '../stages/StageShell'
 
 export function ProjectView({
@@ -77,6 +79,8 @@ export function ProjectView({
   }
 
   function pick(id: StageId) {
+    const fresh = getProject(project!.id) || project!
+    if (fresh.current !== id) setProject(saveProject({ ...fresh, current: id }))
     navigate(`/p/${project!.id}/${id}`)
   }
 
@@ -96,18 +100,6 @@ export function ProjectView({
 
   return (
     <div className="workspace">
-      {project.workingPaper && <section className="working-paper-source" style={{ padding: 18, border: '1px solid var(--line)', borderRadius: 14, marginBottom: 18 }}>
-        <strong>Continued from your working papers</strong>
-        <p>Question and source drafts imported. The study remains a proposal; approval, preregistration and results are not recorded as completed.</p>
-        <a href={project.workingPaper.url} target="_blank" rel="noopener noreferrer">Open the original paper desk ↗</a>
-        <details style={{ marginTop: 12 }}><summary>Read imported source documents</summary>
-          {project.workingPaper.documents.map(d => <details key={d.kind} style={{ marginTop: 12 }}>
-            <summary>{d.kind === 'review' ? 'Review draft' : d.kind === 'protocol' ? 'Study protocol' : 'Ethics pack'}</summary>
-            <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', font: 'inherit', maxHeight: 450, overflow: 'auto' }}>{d.text}</pre>
-          </details>)}
-        </details>
-        <p style={{ fontSize: 13 }}>These are saved source copies. Edits in Studio do not rewrite the archive. Open Analyze for Research Kitchen; export this project to keep its drafts and later work together.</p>
-      </section>}
       <div className="ws-header">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> Projects
@@ -128,10 +120,10 @@ export function ProjectView({
           return (
             <span
               className="ws-coverage"
-              title={`${covered} of ${STAGES.length} stages carry real artifacts (papers, hypotheses, scales, prereg, captures, drafts)`}
+              title={`${covered} of ${STAGES.length} stages carry work (papers, hypotheses, scales, prereg, captures, drafts)`}
             >
               <span className="ws-coverage-ring" style={{ '--p': `${pct}%` } as CSSProperties} aria-hidden />
-              {covered}/{STAGES.length} evidenced
+              {covered}/{STAGES.length} with work
             </span>
           )
         })()}
@@ -156,13 +148,21 @@ export function ProjectView({
         placeholder="e.g. Does servant leadership raise team engagement?"
       />
 
+      <StudyJourney project={project} onPick={pick} />
+      {project.workingPaper && <details className="working-paper-source">
+        <summary>Source archive · review, protocol and ethics documents</summary>
+        <p>Saved source copies remain intact. Editable plans and study evidence stay together in this project. Changes here do not rewrite the archive.</p>
+        <a href={project.workingPaper.url} target="_blank" rel="noopener noreferrer">Open original working paper ↗</a>
+        {!project.workingPaper.planVersion && !project.stages.collect.data.preregLockedAt && <p><button className="btn btn-fill" onClick={() => patch(p => seedArchivedPlan(p))}>Fill empty plan fields from archive</button></p>}
+        {project.workingPaper.documents.map(d => <details key={d.kind}><summary>{d.kind} · archived draft</summary><pre>{d.text}</pre></details>)}
+      </details>}
       <ThreadTray project={project} active={active} onPick={pick} />
 
       <div className="ws-body">
         <Spine project={project} activeStage={active} onPick={pick} />
         <main className="ws-stage" id="main">
           <StageShell
-            key={active}
+            key={`${active}:${project.workingPaper?.planVersion || 0}`}
             project={project}
             stageId={active}
             onChange={(p) => setProject(p)}
@@ -207,7 +207,7 @@ function ThreadTray({
             onClick={() => onPick(s.id)}
             title={`${s.title}: ${carry}`}
           >
-            <b>{s.title}</b> · {carry}
+            <b>{flowTitle(project, s.id)}</b> · {carry}
           </button>
         </Fragment>
       ))}

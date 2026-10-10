@@ -5,6 +5,9 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react'
+import workingPapers from '../lib/workingPaperCatalog.json'
+import { continueWorkingPaper } from '../lib/workingPapers'
+import { nextAction, flowTitle } from '../lib/studyFlow'
 import KitchenWelcome from '../components/KitchenWelcome'
 import { Icon } from '../components/Icon'
 import { VideoLightbox } from '../components/VideoLightbox'
@@ -18,6 +21,13 @@ export function Hub() {
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
   const [showNew, setShowNew] = useState(false)
   const [showTour, setShowTour] = useState(false)
+  const [paperId, setPaperId] = useState('paper-4-sep-2024')
+  const [paperState, setPaperState] = useState('')
+  async function openPaper() {
+    setPaperState('Opening study…')
+    try { const p = await continueWorkingPaper(paperId); navigate(`/p/${p.id}/${nextAction(p) || p.current}`); setPaperState('') }
+    catch (e) { setPaperState(e instanceof Error ? e.message : 'Could not open this paper.') }
+  }
 
   function refresh() {
     setProjects(loadProjects())
@@ -59,9 +69,12 @@ export function Hub() {
       <section className="hero hero-compact" aria-label="Existing research">
         <p className="hero-kicker">Continue the work already prepared</p>
         <h2 className="section-h2">Your 22 working papers</h2>
-        <p>Open a review or protocol on the papers desk, then choose “Continue in Studio” to bring its question and source drafts into this workspace.</p>
+        <p>Choose a prepared study. Its source review, editable protocol and next action stay together through analysis, writing and submission.</p>
+        <div className="bld-grid" style={{ margin: '18px 0' }}><label className="bld-field"><span className="bld-label">Prepared working paper</span><select className="disc-select" value={paperId} onChange={e => setPaperId(e.target.value)}>{workingPapers.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label><button className="btn btn-fill" style={{ alignSelf: 'end' }} disabled={paperState === 'Opening study…'} onClick={openPaper}>Continue selected study →</button></div>
+        {paperState && <p role="status">{paperState}</p>}
+        {projects.length > 0 && <p>Most recently edited: <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/p/${projects[0].id}/${nextAction(projects[0]) || projects[0].current}`)}>{projects[0].title} · {flowTitle(projects[0], nextAction(projects[0]) || projects[0].current)} →</button></p>}
         <div className="hero-cta">
-          <a className="btn btn-fill" href="https://syed-papers.vercel.app/">Open my papers →</a>
+          <a className="btn btn-ghost" href="https://syed-papers.vercel.app/">Read original papers ↗</a>
           <a className="btn btn-ghost" href="https://syahmedu.github.io/research-suite/#research-directory">All research libraries &amp; tools</a>
         </div>
       </section>

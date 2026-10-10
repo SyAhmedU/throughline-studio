@@ -19,7 +19,7 @@ export interface PreregPlans {
   exclusions?: string
   /** frozen assembled text — set when locked, cleared on unlock */
   preregText?: string
-  /** epoch ms of the lock — the timestamp that makes it a preregistration */
+  /** Local snapshot time; external registration must be filed separately. */
   preregLockedAt?: number
   /** immutable trail: every earlier lock is pushed here on unlock, never
    *  edited — an unlock-relock cycle must not be able to erase its own past */
@@ -92,6 +92,9 @@ export function buildPrereg(p: Project, plans: PreregPlans): string {
     ].filter(Boolean)
     out.push(`\n## Design\n${frame.design}${model.length ? '\n' + model.join(' · ') : ''}`)
   }
+  if (p.stages.frame.data.designPlan) out.push(`\n## Detailed design plan\n${p.stages.frame.data.designPlan}`)
+  if (p.stages.measure.data.sourcePlan) out.push(`\n## Instrument / coding plan\n${p.stages.measure.data.sourcePlan}`)
+  if (p.stages.measure.data.reliabilityPlan) out.push(`\n## Coding reliability plan\n${p.stages.measure.data.reliabilityPlan}`)
   out.push(`\n## Sampling plan\n${plans.samplingPlan?.trim() || '(to write)'}`)
   if (scales.length)
     out.push(

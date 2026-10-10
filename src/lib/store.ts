@@ -1,3 +1,4 @@
+import { reviewed } from './studyFlow'
 // ============================================================================
 // Throughline Studio — local persistence (localStorage).
 // Projects live under `tls_projects`; the last-opened project id under
@@ -195,6 +196,6 @@ export function clearActive(): void {
 
 /** Fraction of stages marked done (0..1) — drives the spine progress fill. */
 export function progress(p: Project): number {
-  const done = STAGES.filter((s) => p.stages[s.id]?.status === 'done').length
+  const done = STAGES.filter((s) => reviewed(p, s.id)).length
   return done / STAGES.length
 }

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import type { CSSProperties } from 'react'
+import { flowTitle, reviewed, isMetaStudy } from '../lib/studyFlow'
 import { derivedStatus } from '../lib/artifacts'
 import { STAGES } from '../lib/stages'
 import type { Project, StageId } from '../lib/types'
@@ -21,7 +22,7 @@ export function Spine({
 }) {
   // the thread fills down to the furthest completed stage — progress made visible
   const lastDone = STAGES.reduce(
-    (acc, s, i) => (project.stages[s.id]?.status === 'done' ? i : acc),
+    (acc, s, i) => (reviewed(project, s.id) ? i : acc),
     -1,
   )
   const fill = lastDone < 0 ? 0 : ((lastDone + 0.5) / STAGES.length) * 100
@@ -46,8 +47,8 @@ export function Spine({
                   {st === 'done' ? <Icon name="check" size={13} /> : s.n}
                 </span>
                 <span className="spine-meta">
-                  <span className="spine-title">{s.title}</span>
-                  <span className="spine-brief">{s.brief}</span>
+                  <span className="spine-title">{flowTitle(project, s.id)}</span>
+                  <span className="spine-brief">{isMetaStudy(project) && s.id === 'measure' ? 'Coding rules & reliability' : isMetaStudy(project) && s.id === 'collect' ? 'Article sampling & screening' : s.brief}</span>
                 </span>
               </button>
             </li>

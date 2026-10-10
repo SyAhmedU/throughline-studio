@@ -22,7 +22,8 @@ export function useStageData<T extends Record<string, unknown>>(
   projRef.current = project
 
   function update(patch: Partial<T>) {
-    const next = { ...localRef.current, ...patch } as T
+    const fresh = getProject(project.id) || projRef.current
+    const next = { ...localRef.current, ...fresh.stages[stageId].data, ...patch } as T
     localRef.current = next
     setLocal(next)
     onChange(setStageData(getProject(project.id) || projRef.current, stageId, next))

@@ -1,4 +1,5 @@
 import { getProject, saveProject } from './store'
+import { seedArchivedPlan } from './studyFlow'
 import { STAGE_IDS } from './stages'
 import type { Project } from './types'
 
@@ -31,11 +32,11 @@ export function continueWorkingPaper(id: string): Promise<Project> {
     const stages = Object.fromEntries(STAGE_IDS.map(stage => [stage, {
       status: stage === 'frame' ? 'active' : 'todo', notes: '', updatedAt: ts, data: {},
     }])) as Project['stages']
-    const project = saveProject({
+    const project = saveProject(seedArchivedPlan({
       id: `wp_${id}`, title: pack.title, question: pack.question, field: 'Organizational research',
       current: 'frame', createdAt: ts, updatedAt: ts, stages,
       workingPaper: { id, url: `https://syed-papers.vercel.app/#/${id}/protocol`, importedAt: ts, documents: pack.documents },
-    })
+    }))
     if (!getProject(project.id)) throw new Error('Browser storage is full or unavailable. Export existing work and free space before importing this paper.')
     return project
   })()

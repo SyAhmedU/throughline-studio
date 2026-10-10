@@ -25,11 +25,14 @@ export interface StageState {
 }
 
 export interface Project {
+  /** Author-reviewed checkpoints. Fingerprints invalidate when upstream work changes. */
+  journey?: { reviews: Partial<Record<StageId, { fingerprint: string; at: number }>> }
   /** Frozen source drafts explicitly carried from the Working Papers archive. */
   workingPaper?: {
     id: string
     url: string
     importedAt: number
+    planVersion?: number
     documents: { kind: string; text: string; sha256: string; url: string }[]
   }
   id: string

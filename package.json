@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",
     "test:kitchen": "node kitchen.verify.ts && node scripts/verify-engine-snapshot.mjs",
-    "sync:engines": "node scripts/sync-research-engines.mjs"
+    "sync:engines": "node scripts/sync-research-engines.mjs",
+    "test:flow": "node study-flow.verify.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

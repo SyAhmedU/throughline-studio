@@ -8,6 +8,8 @@
 // ============================================================================
 
 import { useState } from 'react'
+import { manuscriptText } from '../lib/manuscript'
+import { reviewed } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
 import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef, toolLabel } from '../lib/stages'
@@ -21,6 +23,13 @@ interface PublishData extends Record<string, unknown> {
   openAccess?: boolean
   osfUrl?: string
   targetJournal?: string
+  submissionReview?: string
+  submissionStatus?: string
+  submissionId?: string
+  decisionDate?: string
+  revisionPlan?: string
+  dataUrl?: string
+  materialsUrl?: string
   // legacy: plan fields once edited here now live in Collect (read via prereg.ts)
   samplingPlan?: string
   analysisPlan?: string
@@ -73,14 +82,26 @@ export function PublishBody({
 
   return (
     <div className="bld">
+      <section className="study-context"><h2>Submission & revision desk</h2><p>The manuscript is the same draft saved in Write. Keep the journal decision and revision plan beside the study evidence.</p>
+        {!reviewed(project, 'write') && <p>Writing review is still open. The download remains a draft.</p>}
+        <button className="btn btn-fill" disabled={!['intro','methods','results','discussion'].some(k => project.stages.write.data[k])} onClick={() => {
+          const url = URL.createObjectURL(new Blob([manuscriptText(project)], { type: 'text/markdown;charset=utf-8' }))
+          const a = document.createElement('a'); a.href = url; a.download = 'study-manuscript-draft.md'; a.click(); URL.revokeObjectURL(url)
+        }}>Download current manuscript</button>
+        <label className="bld-field"><span className="bld-label">Author approval and journal requirements review</span><textarea className="bld-textarea" rows={3} value={form.submissionReview || ''} onChange={e => update({ submissionReview: e.target.value })} placeholder="Record the journal instructions URL and review date, author approvals, reporting checklist, declarations and outstanding requirements." /></label>
+        <label className="bld-field"><span className="bld-label">Submission status</span><select aria-label="Submission status" className="disc-select" value={form.submissionStatus || ''} onChange={e => update({ submissionStatus: e.target.value })}>{['', 'Preparing', 'Submitted', 'Under review', 'Revision requested', 'Accepted', 'Rejected', 'Withdrawn'].map(v => <option key={v} value={v}>{v || 'Not recorded'}</option>)}</select></label>
+        <label className="bld-field"><span className="bld-label">Manuscript ID / submission reference</span><input className="bld-input" value={form.submissionId || ''} onChange={e => update({ submissionId: e.target.value })} /></label>
+        <label className="bld-field"><span className="bld-label">Revision due / next follow-up date</span><input className="bld-input" type="date" value={form.decisionDate || ''} onChange={e => update({ decisionDate: e.target.value })} /></label>
+        <label className="bld-field"><span className="bld-label">Reviewer comments and response plan</span><textarea className="bld-textarea" rows={4} value={form.revisionPlan || ''} onChange={e => update({ revisionPlan: e.target.value })} /></label>
+        <a href={`#/p/${project.id}/write`}>Return to the manuscript for revisions →</a>
+      </section>
       {/* the frozen preregistration */}
       <section className="bld-section">
         <h2 className="bld-h">Preregistration</h2>
         {lock ? (
           <>
             <p className="prereg-locked">
-              <Icon name="check" size={14} /> Locked {fmtLockDate(lock.lockedAt)} in the Collect stage — frozen before
-              fielding. This is the document of record; report any deviation from it in the paper.
+              <Icon name="check" size={14} /> Local snapshot saved {fmtLockDate(lock.lockedAt)} in Collect. This does not establish external registration or when data collection began. Retain the registry record and report deviations.
             </p>
             <pre className="prereg-pre">{lock.text}</pre>
             <div className="bld-section-head" style={{ marginTop: 12 }}>
@@ -145,6 +166,10 @@ export function PublishBody({
             <input className="bld-input" value={form.targetJournal ?? ''} onChange={(e) => update({ targetJournal: e.target.value })} placeholder="Find one in ScholarScope ↓" />
           </Field>
         </div>
+        <div className="bld-grid" style={{ marginTop: 12 }}>
+          <Field label="Data repository URL"><input className="bld-input" value={form.dataUrl || ''} onChange={e => update({ dataUrl: e.target.value })} /></Field>
+          <Field label="Materials repository URL"><input className="bld-input" value={form.materialsUrl || ''} onChange={e => update({ materialsUrl: e.target.value })} /></Field>
+        </div>
         {/* the availability statement journals ask for, assembled from the
             answers above — it changes as the checklist changes (audit B17) */}
         <p className="anz-fineprint" style={{ marginTop: 12 }}>
@@ -179,13 +204,13 @@ function availabilityStatement(form: PublishData): string {
   const parts: string[] = []
   parts.push(
     form.dataShared
-      ? `The data supporting this study are openly available${url ? ` at ${url}` : ' (add the repository URL above)'}.`
-      : 'The data are not publicly available.',
+      ? `The data supporting this study are openly available${form.dataUrl ? ` at ${form.dataUrl}` : ' (add the data repository URL)'}.`
+      : 'Data availability has not been recorded; complete this statement before submission.',
   )
   parts.push(
     form.materialsShared
-      ? `Study materials and the analysis log are shared${url ? ` at ${url}` : ''}.`
-      : 'Materials are available from the authors on request.',
+      ? `Study materials and the analysis log are shared${form.materialsUrl ? ` at ${form.materialsUrl}` : ' (add the materials repository URL)'}.`
+      : 'Materials availability has not been recorded; complete this statement before submission.',
   )
   if (form.preregistered && url) parts.push(`The study was preregistered at ${url}.`)
   return parts.join(' ')

@@ -79,6 +79,13 @@ export function FrameBody({
   projRef.current = project
   const formRef = useRef(form)
   formRef.current = form
+  useEffect(() => {
+    if (formRef.current.question !== project.question) {
+      const next = { ...formRef.current, question: project.question }
+      formRef.current = next
+      setForm(next)
+    }
+  }, [project.question])
   function set(patch: Partial<typeof form>) {
     const next = { ...formRef.current, ...patch }
     formRef.current = next
@@ -87,8 +94,8 @@ export function FrameBody({
     const { question, ...fd } = next
     const saved = saveProject({
       ...p,
-      question,
-      stages: { ...p.stages, frame: { ...p.stages.frame, data: fd, updatedAt: Date.now() } },
+      question: 'question' in patch ? question : p.question,
+      stages: { ...p.stages, frame: { ...p.stages.frame, data: { ...p.stages.frame.data, ...fd }, updatedAt: Date.now() } },
     })
     onChange(saved)
   }

@@ -6,6 +6,7 @@
 // so the manual done flag wins; everything below it is derived.
 // ============================================================================
 
+import { reviewed } from './studyFlow'
 import { readingList } from './corpus'
 import type { Project, StageId, StageStatus } from './types'
 
@@ -16,7 +17,7 @@ export function carrySummary(p: Project, stageId: StageId): string | null {
   switch (stageId) {
     case 'discover': {
       const n = readingList(p).length
-      return n ? `${n} ${n === 1 ? 'paper' : 'papers'} in the reading list` : null
+      return n ? `${n} ${n === 1 ? 'paper' : 'papers'} in the reading list` : p.workingPaper ? 'archived review draft' : null
     }
     case 'frame': {
       const f = data('frame')
@@ -26,13 +27,13 @@ export function carrySummary(p: Project, stageId: StageId): string | null {
     }
     case 'measure': {
       const n = count(data('measure').scales)
-      return n ? `${n} ${n === 1 ? 'scale' : 'scales'} in the instrument` : null
+      return n ? `${n} ${n === 1 ? 'scale' : 'scales'} in the instrument` : data('measure').sourcePlan ? 'measurement / coding plan' : null
     }
     case 'collect': {
       const c = data('collect')
       const status =
         typeof c.status === 'string' && c.status !== 'Not started' ? (c.status as string).toLowerCase() : null
-      const parts = [c.preregLockedAt ? 'prereg locked' : null, status].filter(Boolean)
+      const parts = [c.preregLockedAt ? 'local plan snapshot' : c.samplingPlan ? 'sampling plan' : null, status].filter(Boolean)
       return parts.length ? parts.join(' · ') : null
     }
     case 'analyze': {
@@ -59,7 +60,8 @@ export function carrySummary(p: Project, stageId: StageId): string | null {
 /** Manual 'done' wins; otherwise 'active' the moment real artifacts exist. */
 export function derivedStatus(p: Project, stageId: StageId): StageStatus {
   const manual = p.stages[stageId]?.status ?? 'todo'
-  if (manual === 'done') return 'done'
+  if (reviewed(p, stageId)) return 'done'
+  if (manual === 'done') return 'active'
   if (carrySummary(p, stageId) !== null) return 'active'
   return manual
 }

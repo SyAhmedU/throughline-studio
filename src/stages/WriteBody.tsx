@@ -15,6 +15,8 @@ import { deepLink, stageDef, toolLabel } from '../lib/stages'
 import type { SavedTheory } from '../lib/theories'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
+import { plannedMethods } from '../lib/manuscript'
+import { protocolSections } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
 
 interface WriteData extends Record<string, unknown> {
@@ -61,9 +63,9 @@ export function WriteBody({
   const drafts = useMemo(
     () => ({
       intro: introDraft(project.question, frame),
-      methods: methodsDraft(frame, scales, project),
+      methods: plannedMethods(project, scales),
       results: captures.map((c) => c.apa).join('\n\n'),
-      references: referencesDraft(frame, scales, papers),
+      references: [referencesDraft(frame, scales, papers), protocolSections(project)['References (instruments)']].filter(Boolean).join('\n\n'),
       limitations: limitationsDraft(frame, project),
     }),
     [project, frame, scales, captures, papers],
@@ -116,7 +118,7 @@ export function WriteBody({
     setAi('loading')
     const prompt =
       `Write a concise (~160 word) academic abstract from these study facts. ` +
-      `Do not invent statistics, citations, authors, or findings beyond what is given.\n` +
+      `Do not invent statistics, citations, authors, or findings beyond what is given. Plans are NOT completed procedures. With no captured results, write a proposal abstract in future tense and explicitly say results are not available.\n` +
       `Question: ${project.question}\nGap: ${frame.gap || ''}\n` +
       `Hypotheses: ${(frame.hypotheses || []).join('; ')}\n` +
       `Theory: ${frame.theory?.name || ''}\n` +
@@ -143,6 +145,11 @@ export function WriteBody({
 
   return (
     <div className="bld">
+      <section className="study-context"><h2>One manuscript, assembled from this study</h2><p>Fill empty sections from your question, plan, captured results and source references. Existing writing stays intact. Methods remain labelled as planned until you reconcile them with what happened.</p><button className="btn btn-fill" onClick={() => {
+        const patch: Partial<WriteData> = {}
+        for (const key of ['intro', 'methods', 'results', 'references'] as const) if (!form[key]?.trim() && drafts[key]) patch[key] = drafts[key]
+        update(patch)
+      }}>Fill empty sections from study</button></section>
       <Section label="Title">
         <input className="bld-input" value={form.title ?? project.title} onChange={(e) => update({ title: e.target.value })} />
       </Section>
@@ -160,15 +167,15 @@ export function WriteBody({
         {ai === 'error' && <p className="anz-error">AI draft failed — try again or write it by hand.</p>}
       </Section>
 
-      <Section label="Introduction" action={<PullBtn onClick={() => update({ intro: drafts.intro })} disabled={!drafts.intro} />}>
+      <Section label="Introduction" action={<PullBtn onClick={() => { if (!form.intro?.trim() || window.confirm('Replace this section with the current study draft?')) update({ intro: drafts.intro }) }} disabled={!drafts.intro} />}>
         <textarea className="bld-textarea" rows={5} value={form.intro ?? ''} onChange={(e) => update({ intro: e.target.value })} placeholder="The question, the gap, the theory, the hypotheses. “Pull from project” drafts a scaffold from your Frame stage." />
       </Section>
 
-      <Section label="Method" action={<PullBtn onClick={() => update({ methods: drafts.methods })} disabled={!drafts.methods} />}>
+      <Section label="Method" action={<PullBtn onClick={() => { if (!form.methods?.trim() || window.confirm('Replace this section with the current study draft?')) update({ methods: drafts.methods }) }} disabled={!drafts.methods} />}>
         <textarea className="bld-textarea" rows={5} value={form.methods ?? ''} onChange={(e) => update({ methods: e.target.value })} placeholder="Design, participants, measures. “Pull from project” assembles this from Frame + Measure + Collect." />
       </Section>
 
-      <Section label="Results" action={<PullBtn label="Pull from analysis" onClick={() => update({ results: drafts.results })} disabled={!drafts.results} />}>
+      <Section label="Results" action={<PullBtn label="Pull from analysis" onClick={() => { if (!form.results?.trim() || window.confirm('Replace this section with the current study draft?')) update({ results: drafts.results }) }} disabled={!drafts.results} />}>
         <textarea className="bld-textarea" rows={5} value={form.results ?? ''} onChange={(e) => update({ results: e.target.value })} placeholder="“Pull from analysis” drops in the APA write-ups you captured in the Analyze stage." />
         {captures.length === 0 && <p className="anz-fineprint">No captured results yet — run analyses in the Analyze stage and capture them.</p>}
       </Section>
@@ -210,7 +217,7 @@ export function WriteBody({
         />
       </Section>
 
-      <Section label="References" action={<PullBtn onClick={() => update({ references: drafts.references })} disabled={!drafts.references} />}>
+      <Section label="References" action={<PullBtn onClick={() => { if (!form.references?.trim() || window.confirm('Replace this section with the current study draft?')) update({ references: drafts.references }) }} disabled={!drafts.references} />}>
         <textarea className="bld-textarea bld-mono" rows={5} value={form.references ?? ''} onChange={(e) => update({ references: e.target.value })} placeholder="“Pull from project” lists your theory, scale, and reading-list citations (real records)." />
       </Section>
 
@@ -257,26 +264,6 @@ function introDraft(question: string, f: FrameData): string {
   if (f.hypotheses && f.hypotheses.length) parts.push(f.hypotheses.map((h, i) => `H${i + 1}: ${h}`).join(' '))
   return parts.join('\n\n')
 }
-function methodsDraft(f: FrameData, scales: SavedScale[], project: Project): string {
-  const c = (project.stages.collect?.data || {}) as { targetN?: string; mode?: string; exclusions?: string }
-  const parts: string[] = []
-  if (f.design) parts.push(`Design. A ${f.design.toLowerCase()} design was used.`)
-  const ppts = [c.targetN ? `A sample of N = ${c.targetN}` : '', c.mode ? `was recruited via ${c.mode.toLowerCase()}` : ''].filter(Boolean).join(' ')
-  if (ppts) parts.push(`Participants. ${ppts}.`)
-  if (scales.length)
-    parts.push(
-      'Measures. ' +
-        scales
-          .map((s) => `${s.construct || s.name} was measured with the ${s.name}${s.abbreviation ? ` (${s.abbreviation})` : ''}, ${s.itemCount} items${s.alphaSummary ? `, α = ${s.alphaSummary}` : ''} (${s.citation}).`)
-          .join(' '),
-    )
-  if (c.exclusions?.trim()) parts.push(`Exclusions. ${c.exclusions.trim()}`)
-  // the JARS-style full-disclosure sentence — keep it only if it is true of
-  // your study; deleting it is a signal to yourself that something is unreported
-  if (parts.length) parts.push('We report all measures, manipulations, and exclusions in this study.')
-  return parts.join('\n\n')
-}
-
 /** Deterministic limitations from the project's own design choices (audit
  *  B15b) — each sentence is triggered by a real, recorded decision, never
  *  generated text. The author edits; nothing here is invented. */
@@ -286,11 +273,11 @@ function limitationsDraft(f: FrameData, project: Project): string {
   const out: string[] = []
   if (d === 'Correlational / survey') {
     out.push(
-      'The cross-sectional design supports associations, not causal claims; reverse and reciprocal causation cannot be ruled out.',
+      'Assess whether the survey design and timing support only associations; discuss reverse and reciprocal causation where relevant.',
     )
     if (!c.cmvPlan)
       out.push(
-        'All variables were measured from a single source at a single point in time, so common-method variance may inflate the observed relationships.',
+        'Assess whether single-source or same-occasion measurement could affect the relationships; document the actual sources and timing before making this claim.',
       )
   }
   if (d === 'Longitudinal')
@@ -298,7 +285,7 @@ function limitationsDraft(f: FrameData, project: Project): string {
       'Attrition across waves may bias estimates if dropout relates to the constructs under study; retention analyses should accompany the results.',
     )
   if (d === 'Experimental' || d === 'Quasi-experimental')
-    out.push('The controlled setting buys internal validity at some cost to ecological validity; field replication would strengthen the claim.')
+    out.push('Evaluate internal and ecological validity against the actual setting, assignment procedure and controls.')
   if (d === 'Qualitative')
     out.push('Findings are transferable rather than statistically generalizable; the purposive sample bounds the contexts to which they speak.')
   if (/multilevel|nested|diary|experience sampling/i.test(d))

@@ -5,11 +5,13 @@
 // Notes + status are shared across all stages.
 // ============================================================================
 
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { STAGES, stageDef } from '../lib/stages'
-import { setStageNotes, setStageStatus } from '../lib/store'
+import { Checkpoint, StudyContext } from '../components/StudyJourney'
+import { flowTitle, isMetaStudy } from '../lib/studyFlow'
+import { getProject, setStageNotes } from '../lib/store'
 import type { Project, StageId, StageStatus } from '../lib/types'
 
 // Each stage body is its own chunk: they carry heavy stage-specific libs
@@ -25,6 +27,9 @@ const MeasureBody = lazy(() => import('./MeasureBody').then((m) => ({ default: m
 const PublishBody = lazy(() => import('./PublishBody').then((m) => ({ default: m.PublishBody })))
 const WriteBody = lazy(() => import('./WriteBody').then((m) => ({ default: m.WriteBody })))
 
+const MetaCollectBody = lazy(() => import('./MetaCollectBody').then(m => ({ default: m.MetaCollectBody })))
+const NoBody = () => null
+
 export function StageShell({
   project,
   stageId,
@@ -36,23 +41,21 @@ export function StageShell({
   onChange: (p: Project) => void
   onPick: (id: StageId) => void
 }) {
-  const def = stageDef(stageId)
+  const def = { ...stageDef(stageId), title: flowTitle(project, stageId) }
+  if (isMetaStudy(project) && stageId === 'measure') Object.assign(def, { verb: 'Define the codes', brief: 'Coding rules & reliability', blurb: 'Operationalise the coding manual and document the pilot and coder arrangements.', carries: 'a coding manual and agreement plan' })
+  if (isMetaStudy(project) && stageId === 'collect') Object.assign(def, { verb: 'Assemble the evidence', brief: 'Article sampling & screening', blurb: 'Record search and eligibility rules, readiness evidence and screening decisions.', carries: 'a screened article set and coding protocol' })
   const state = project.stages[stageId]
   const topic = project.question.trim() || project.title.trim()
 
-  // notes: local state, debounced persist
+  // Persist notes immediately, including when navigating to the next step.
   const [notes, setNotes] = useState(state.notes)
-  const timer = useRef<number | undefined>(undefined)
   useEffect(() => {
     setNotes(state.notes)
   }, [stageId, state.notes])
 
   function onNotes(v: string) {
     setNotes(v)
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => {
-      onChange(setStageNotes(project, stageId, v))
-    }, 400)
+    onChange(setStageNotes(getProject(project.id) || project, stageId, v))
   }
 
   const idx = STAGES.findIndex((s) => s.id === stageId)
@@ -66,9 +69,9 @@ export function StageShell({
       : stageId === 'frame'
         ? FrameBody
         : stageId === 'measure'
-          ? MeasureBody
+          ? isMetaStudy(project) ? NoBody : MeasureBody
           : stageId === 'collect'
-            ? CollectBody
+            ? isMetaStudy(project) ? MetaCollectBody : CollectBody
             : stageId === 'analyze'
               ? AnalyzeBody
               : stageId === 'write'
@@ -94,6 +97,7 @@ export function StageShell({
 
       <div className="stage-grid">
         <div className="stage-main">
+          <StudyContext project={project} stage={stageId} onChange={onChange} />
           <Suspense fallback={null}>
             <Body project={project} onChange={onChange} topic={topic} />
           </Suspense>
@@ -120,32 +124,11 @@ export function StageShell({
             {carrySub && <p className="side-carry-sub">{carrySub}</p>}
           </div>
 
-          <div className="side-card">
-            <h3 className="side-h3">Stage status</h3>
-            {/* progress is read from the artifacts; only "done" is a judgment */}
-            <p className="side-status-line">
-              {shown === 'done'
-                ? 'Done'
-                : shown === 'active'
-                  ? carrySub
-                    ? `In progress — ${carrySub}`
-                    : 'In progress'
-                  : 'Nothing here yet — it updates itself as you work'}
-            </p>
-            <button
-              className={`btn ${state.status === 'done' ? 'btn-ghost' : 'btn-fill'}`}
-              onClick={() =>
-                onChange(setStageStatus(project, stageId, state.status === 'done' ? 'todo' : 'done'))
-              }
-            >
-              <Icon name={state.status === 'done' ? 'dot' : 'check'} size={14} />{' '}
-              {state.status === 'done' ? 'Reopen stage' : 'Mark done'}
-            </button>
-          </div>
+          <Checkpoint project={project} stage={stageId} onChange={onChange} onPick={onPick} />
 
           {next && (
             <button className="btn btn-next" onClick={() => onPick(next.id)}>
-              Next: {next.title} <Icon name="arrow" size={15} />
+              Next: {flowTitle(project, next.id)} <Icon name="arrow" size={15} />
             </button>
           )}
         </aside>
