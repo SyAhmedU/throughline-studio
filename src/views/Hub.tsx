@@ -16,6 +16,7 @@ import { navigate } from '../lib/router'
 import { STAGES } from '../lib/stages'
 import { createProject, deleteProject, loadProjects, progress, saveProject, subscribe } from '../lib/store'
 import type { Project } from '../lib/types'
+import { restoredProjects } from '../lib/backup'
 
 export function Hub() {
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
@@ -47,13 +48,11 @@ export function Hub() {
    *  in one browser's localStorage). */
   async function importFile(f: File) {
     try {
-      const p = JSON.parse(await f.text()) as Project
-      if (!p || typeof p !== 'object' || !p.id || !p.title || !p.stages) {
-        throw new Error('that is not a Throughline Studio project file')
-      }
-      saveProject(p)
+      if (f.size > 20_000_000) throw new Error('Backup is larger than 20 MB')
+      const copies = restoredProjects(await f.text())
+      copies.forEach(saveProject)
       refresh()
-      navigate(`/p/${p.id}`)
+      navigate(`/p/${copies[0].id}`)
     } catch (e) {
       alert(`Couldn't import — ${(e as Error).message}. Use Export in a project's header to create a valid backup.`)
     }
@@ -185,7 +184,7 @@ export function Hub() {
       <section className="shelf">
         <div className="shelf-head">
           <h2 className="section-h2">Your projects</h2>
-          <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }} title="Restore a project from a JSON backup exported from its workspace header">
+          <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }} title="Import a project or recovery backup as separate copies; existing studies stay unchanged">
             <Icon name="arrow" size={14} /> Import
             <input
               type="file"

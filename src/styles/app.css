@@ -2376,3 +2376,9 @@ button.rfx-chip:hover { color: var(--accent); border-color: var(--accent); }
 
 /* Keep project backup and evidence controls reachable on narrow screens. */
 @media(max-width:600px){.ws-header{flex-wrap:wrap}.ws-title-input{flex:1 1 160px;min-width:0}.ws-coverage{max-width:100%}}
+
+/* Save recovery stays visible across every stage without covering the workspace. */
+.save-recovery { position: relative; z-index: 2; margin: 12px auto; padding: 16px 20px; width: min(1120px, calc(100% - 32px)); box-sizing: border-box; border: 1px solid #b97524; border-radius: 12px; background: #fff5df; color: #51340e; }
+.save-recovery p { margin: 6px 0 12px; line-height: 1.5; font-size: 14px; }
+.save-recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.save-recovery .btn { min-height: 44px; color: #51340e; border-color: #a66b25; background: #fffaf0; }

@@ -106,7 +106,7 @@ function SyncPill({ status }: { status: SyncStatus }) {
   const label = status === 'syncing' ? 'Syncing…' : status === 'error' ? 'Sync error' : 'Synced'
   const title =
     status === 'error'
-      ? 'Could not reach the cloud — your work is saved locally and will retry on the next change.'
+      ? 'Cloud backup could not be confirmed. Check any save warning and export a backup before closing.'
       : status === 'synced'
         ? 'Your projects are backed up to your account and follow you across devices.'
         : 'Saving your projects to your account…'

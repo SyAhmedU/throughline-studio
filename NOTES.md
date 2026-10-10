@@ -84,3 +84,11 @@ Research Kitchen now has **20 recipes**, including a secondary-data planning/aud
 ## UI/UX review — 2026-10-10
 
 Shared mobile form readability and control sizing; supplementary refresh/tour utilities moved below content. The existing shared study state, recipe engines and guided checkpoints are unchanged. Browser and build evidence is recorded in `../output/design-review-2026-10-10/`. This is a heuristic/interaction review, not a complete accessibility certification or user study.
+
+## 2026-10-10 — Detailed save and recovery pass
+
+`store.ts` now actually retains the latest project edits in memory when localStorage writes fail. A shared `SaveStatus` recovery panel appears on every route with a recovery JSON download, explicit unsaved-on-device status, retry after quota failures, and a before-close warning while edits remain unpersisted. Unreadable/corrupt stored bytes are never overwritten by new work; the original stored file can be downloaded separately. Recovery backups preserve the same study data, source documents, captures and manuscript fields; they are not cloud-sync confirmations.
+
+`backup.ts` validates core project/stage structure before import. Single-project exports and `throughline-backup-1` recovery bundles restore as separately identified, clearly labelled copies, retaining existing newer studies. Whole bundles are validated before any save. The existing individual project export stays compatible. Cloud-error wording no longer promises local persistence when storage may also have failed.
+
+Validation: `node storage.verify.ts` covers quota, latest edits, recovery round-trip, retry, copy identities, incomplete backup rejection and corrupt/blocked storage protection; `node study-flow.verify.ts` still passes all 22 source packs; `npm run build` passes (existing main-bundle size warning). Isolated Chrome checks in `output/research-detail-2026-10-10/check-recovery.py` exercise failure/recovery through real screens, navigation, JSON download, retry+reload, restore without overwrite, corruption preservation and 390px reflow. The existing seven-stage browser journey also passed with zero page errors and explicitly simulated QA evidence. No real account/study data were edited in verification.

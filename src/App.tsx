@@ -11,6 +11,7 @@ import { createProject, saveProject } from './lib/store'
 import { useCloudSync } from './lib/useCloudSync'
 import { Hub } from './views/Hub'
 import { ProjectView } from './views/ProjectView'
+import { SaveStatus } from './components/SaveStatus'
 
 // Worked examples carry 20 detailed case studies; load that chunk on demand so
 // it never weighs down the hub/workspace.
@@ -60,6 +61,7 @@ export default function App() {
     <div className="app">
       <Ambient />
       <BrandBar syncStatus={sync.enabled ? sync.status : null} />
+      <SaveStatus />
       <div className="app-body">
         {handoff && <p role="status" style={{ padding: '16px 24px' }}>{handoff} <a href="https://syed-papers.vercel.app/">Back to papers</a></p>}
         {route.name === 'project' && route.projectId ? (

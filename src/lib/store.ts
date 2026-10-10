@@ -1,4 +1,5 @@
-import { reviewed } from './studyFlow'
+import { reviewed } from './studyFlow.ts'
+import { isProject } from './backup.ts'
 // ============================================================================
 // Throughline Studio — local persistence (localStorage).
 // Projects live under `tls_projects`; the last-opened project id under
@@ -7,10 +8,20 @@ import { reviewed } from './studyFlow'
 // ============================================================================
 
 import type { Project, StageId, StageState, StageStatus } from './types'
-import { STAGES } from './stages'
+import { STAGES } from './stages.ts'
 
 const KEY = 'tls_projects'
 const ACTIVE = 'tls_active'
+let sessionProjects: Project[] = []
+let pendingSave = false
+let storageIssue: 'read' | 'write' | 'invalid' | null = null
+let unreadableBackup: string | null = null
+export const getStorageIssue = () => storageIssue
+export const hasUnsavedWork = () => pendingSave
+export const getUnreadableBackup = () => unreadableBackup
+function setStorageIssue(issue: typeof storageIssue): void {
+  if (storageIssue !== issue) { storageIssue = issue; emit() }
+}
 
 function now(): number {
   return Date.now()
@@ -65,23 +76,44 @@ function blankStages(): Project['stages'] {
 }
 
 export function loadProjects(): Project[] {
+  if (pendingSave) return structuredClone(sessionProjects)
+  let raw: string | null
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return []
-    const arr = JSON.parse(raw)
-    return Array.isArray(arr) ? (arr as Project[]) : []
+    raw = localStorage.getItem(KEY)
   } catch {
-    return []
+    setStorageIssue('read')
+    return structuredClone(sessionProjects)
   }
+  try {
+    const arr: unknown = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(arr) || !arr.every(isProject)) throw new Error('Invalid saved workspace')
+    sessionProjects = arr
+    unreadableBackup = null
+    setStorageIssue(null)
+  } catch {
+    unreadableBackup = raw
+    setStorageIssue('invalid')
+  }
+  return structuredClone(sessionProjects)
 }
 
 function persist(list: Project[]): void {
+  sessionProjects = structuredClone(list)
+  pendingSave = true
+  // Never replace unreadable/invalid stored work with an apparently empty shelf.
+  if (storageIssue === 'read' || storageIssue === 'invalid') { emit(); return }
   try {
     localStorage.setItem(KEY, JSON.stringify(list))
+    pendingSave = false
+    setStorageIssue(null)
   } catch {
-    /* quota / private mode — keep working in memory for this session */
+    setStorageIssue('write')
   }
   emit()
+}
+
+export function retrySave(): void {
+  if (storageIssue === 'write') persist(sessionProjects)
 }
 
 export function getProject(id: string): Project | undefined {
