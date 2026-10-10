@@ -79,3 +79,8 @@ Live release QA (`output/analysis-qa/kitchen/`): headless Chromium on the public
 ## 2026-10-10 — Secondary-data recipe
 
 Research Kitchen now has **20 recipes**, including a secondary-data planning/audit workflow inside Analyze. `SecondaryBench.tsx` stores researcher-supplied source/version/reuse conditions, population/unit/coverage, codebook, variable construction, missing-code handling, selection/design and robustness plans in `kitchen.secondary`. The loaded dataset drives blank-cell bars and single-column duplicate/missing identifier checks (`lib/secondary.ts`); zero and sentinel values are not silently treated as missing. Markdown export and Write capture retain the current audit and provenance. Existing R engines remain the execution route. No automatic discovery, source verification, joins, recoding, complex-survey estimator or causal identification is added. Upload/persistence/runtime limits remain 2 MB / 200 KB CSV / 25,000 R rows. Unit tests cover duplicate IDs, missing keys, sentinel/zero preservation, absent keys and no dataset. Kitchen tests, source integrity and production build pass; browser QA was not repeated for this compact addition.
+
+
+## UI/UX review — 2026-10-10
+
+Shared mobile form readability and control sizing; supplementary refresh/tour utilities moved below content. The existing shared study state, recipe engines and guided checkpoints are unchanged. Browser and build evidence is recorded in `../output/design-review-2026-10-10/`. This is a heuristic/interaction review, not a complete accessibility certification or user study.
