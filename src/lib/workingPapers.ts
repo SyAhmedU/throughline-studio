@@ -9,7 +9,10 @@ const pending = new Map<string, Promise<Project>>()
 export function continueWorkingPaper(id: string): Promise<Project> {
   if (!/^paper-\d{1,2}-(sep|oct|nov|dec)-2024$/.test(id)) return Promise.reject(new Error('Unknown working paper. Open it from the papers desk.'))
   const existing = getProject(`wp_${id}`)
-  if (existing) return Promise.resolve(existing)
+  if (existing) {
+    const filled = seedArchivedPlan(existing)
+    return Promise.resolve(filled === existing ? existing : saveProject(filled))
+  }
   const active = pending.get(id)
   if (active) return active
   const task = (async () => {
