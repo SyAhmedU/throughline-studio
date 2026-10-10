@@ -99,7 +99,9 @@ export function CollectBody({
     frame.moderators?.trim() ? 'moderator(s)' : '',
   ].filter(Boolean)
 
+  const hasArchivedProtocol = !!project.workingPaper
   const suggestedN = useMemo(() => {
+    if (hasArchivedProtocol) return NaN // The source protocol carries study-specific assumptions.
     // the inputs display defaults (d .50 / r .30) before first edit — compute
     // from the same values the researcher actually sees
     const e = Number(form.effectSize ?? (effectKind === 'r' ? '0.30' : '0.50'))
@@ -107,7 +109,7 @@ export function CollectBody({
     const pw = Number(form.power) || 0.8
     if (!Number.isFinite(e) || e <= 0) return NaN
     return effectKind === 'r' ? nForCorr(e, a, pw) : nPerGroup(e, a, pw) * 2
-  }, [form.effectSize, form.alpha, form.power, effectKind])
+  }, [form.effectSize, form.alpha, form.power, effectKind, hasArchivedProtocol])
 
   // ── Collection plan — design-aware, deterministic (no AI) ─────────────────
   // Longitudinal: plan waves and over-recruit for attrition so the LAST wave
@@ -128,6 +130,7 @@ export function CollectBody({
 
   /** The plan as one verifiable sentence — insertable into the sampling plan. */
   function collectionPlanText(): string {
+    if (hasArchivedProtocol) return ''
     if (qualitative) {
       // No fabricated N: saturation is the stopping rule, stated as method.
       return `Qualitative design. Sample purposively for variation on the phenomenon (not randomly for representativeness). Stopping rule: saturation — stop when further interviews/observations yield no new codes or themes (Guest, Bunce & Johnson, 2006) — and report in the paper how saturation was judged. A power-based N does not apply to this design.`
@@ -224,7 +227,9 @@ export function CollectBody({
       frame.hypotheses?.length
         ? `Hypotheses:\n${frame.hypotheses.filter(Boolean).map((h, i) => `H${i + 1}: ${h}`).join('\n')}`
         : 'No hypotheses framed yet.',
-      `Design: ${frame.design || 'not chosen yet'}`,
+      `Design: ${project.stages.frame.data.designPlan || frame.design || 'not chosen yet'}`,
+      plans.samplingPlan ? `Existing sampling protocol (preserve its assumptions): ${plans.samplingPlan}` : '',
+      plans.analysisPlan ? `Existing analysis protocol: ${plans.analysisPlan}` : '',
       scales.length
         ? `Instrument: ${scales.map((s) => `${s.name}${s.itemCount ? ` (${s.itemCount} items)` : ''}`).join('; ')}`
         : 'No instrument yet.',
@@ -266,6 +271,8 @@ export function CollectBody({
 
   return (
     <div className="bld">
+      {hasArchivedProtocol && <section className="bld-section"><h2 className="bld-h">Study-specific sampling rationale</h2><p className="bld-muted">Your archived sampling and sample-size rationale is carried into the editable plan below. Review its assumptions and any required pilot or simulation before fielding; a generic two-group calculator does not replace this protocol.</p></section>}
+      {!hasArchivedProtocol && <>
       {/* sample size */}
       <section className="bld-section">
         <h2 className="bld-h">Target sample size</h2>
@@ -399,6 +406,7 @@ export function CollectBody({
         )}
       </section>
 
+      </>}
       {/* instrument blueprint */}
       <section className="bld-section">
         <h2 className="bld-h">Survey blueprint</h2>
