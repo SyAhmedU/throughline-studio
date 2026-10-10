@@ -12,7 +12,7 @@
 
 import type { Project } from './types'
 
-const BASE = 'https://syahmedu.github.io/syeds-research-book/data'
+const BASE = 'https://syeds-research-book.vercel.app/data'
 
 /** One record from papers.index.json (only the fields we use). */
 export interface CorpusPaper {

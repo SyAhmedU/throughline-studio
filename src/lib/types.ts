@@ -25,6 +25,13 @@ export interface StageState {
 }
 
 export interface Project {
+  /** Frozen source drafts explicitly carried from the Working Papers archive. */
+  workingPaper?: {
+    id: string
+    url: string
+    importedAt: number
+    documents: { kind: string; text: string; sha256: string; url: string }[]
+  }
   id: string
   title: string
   /** discipline / domain, e.g. "Organizational Behavior" */

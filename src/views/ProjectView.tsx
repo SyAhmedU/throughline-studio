@@ -96,6 +96,18 @@ export function ProjectView({
 
   return (
     <div className="workspace">
+      {project.workingPaper && <section className="working-paper-source" style={{ padding: 18, border: '1px solid var(--line)', borderRadius: 14, marginBottom: 18 }}>
+        <strong>Continued from your working papers</strong>
+        <p>Question and source drafts imported. The study remains a proposal; approval, preregistration and results are not recorded as completed.</p>
+        <a href={project.workingPaper.url} target="_blank" rel="noopener noreferrer">Open the original paper desk ↗</a>
+        <details style={{ marginTop: 12 }}><summary>Read imported source documents</summary>
+          {project.workingPaper.documents.map(d => <details key={d.kind} style={{ marginTop: 12 }}>
+            <summary>{d.kind === 'review' ? 'Review draft' : d.kind === 'protocol' ? 'Study protocol' : 'Ethics pack'}</summary>
+            <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', font: 'inherit', maxHeight: 450, overflow: 'auto' }}>{d.text}</pre>
+          </details>)}
+        </details>
+        <p style={{ fontSize: 13 }}>These are saved source copies. Edits in Studio do not rewrite the archive. Open Analyze for Research Kitchen; export this project to keep its drafts and later work together.</p>
+      </section>}
       <div className="ws-header">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> Projects

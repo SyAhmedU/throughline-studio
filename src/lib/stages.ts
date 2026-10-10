@@ -57,8 +57,8 @@ export const STAGES: StageDef[] = [
       {
         name: "Syed's Research Book",
         action: 'Browse the corpus',
-        role: 'Search 9,388 hand-coded papers across 167 OB/management constructs.',
-        url: 'https://syahmedu.github.io/syeds-research-book/',
+        role: 'Explore the full dated corpus: 9,388 hand-coded papers plus imported literature tiers.',
+        url: 'https://syeds-research-book.vercel.app/',
       },
       {
         name: 'BookScope',
@@ -94,7 +94,7 @@ export const STAGES: StageDef[] = [
       {
         name: 'TheoryScope',
         action: 'Pick a theory lens',
-        role: 'Pick the lens your study looks through, from ~400 mapped theories.',
+        role: 'Choose a theoretical lens from the sourced catalogue and construct maps.',
         url: 'https://theoryscope.vercel.app/',
         param: 'q',
       },

@@ -139,7 +139,7 @@ function normaliseStored(raw: unknown, abstract: string): PaperFacets | null {
 
 // ── Shard access (both tiers) ───────────────────────────────────────────────
 const HAND_BASE = 'https://papercards.vercel.app/data/dissections'
-const RECENT_BASE = 'https://syahmedu.github.io/syeds-research-book/data/recent.dissections'
+const RECENT_BASE = 'https://syeds-research-book.vercel.app/data/recent.dissections'
 
 // MUST match shardOf() in paperpulse scripts/dissect-corpus.mjs.
 function hashOf(doi: string): number {

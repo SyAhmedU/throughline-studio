@@ -2,7 +2,8 @@
 // Throughline Studio — app shell + routing.
 // ============================================================================
 
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { continueWorkingPaper } from './lib/workingPapers'
 import { Ambient } from './components/Ambient'
 import { BrandBar } from './components/BrandBar'
 import { navigate, parseRoute, useHash } from './lib/router'
@@ -23,6 +24,7 @@ export default function App() {
   const hash = useHash()
   const route = parseRoute(hash)
   const sync = useCloudSync()
+  const [handoff, setHandoff] = useState('')
 
   // Hash routing keeps the old scroll position when the view swaps, which
   // strands you mid-page after a stage/route change. Reset to top whenever the
@@ -36,7 +38,18 @@ export default function App() {
   // on the other tools: read ?topic= once on a bare URL, strip it, spin up a
   // project with the question pre-filled, and land in the workspace.
   useEffect(() => {
-    const topic = (new URLSearchParams(window.location.search).get('topic') || '').trim()
+    const params = new URLSearchParams(window.location.search)
+    const paper = params.get('paper')
+    if (paper) {
+      setHandoff('Opening your paper and its source drafts…')
+      continueWorkingPaper(paper).then(p => {
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+        setHandoff('')
+        navigate(`/p/${p.id}/${p.current}`)
+      }).catch(e => setHandoff((e as Error).message))
+      return
+    }
+    const topic = (params.get('topic') || '').trim()
     if (!topic) return
     window.history.replaceState(null, '', window.location.pathname + window.location.hash)
     const p = saveProject({ ...createProject(topic.slice(0, 80), ''), question: topic })
@@ -48,6 +61,7 @@ export default function App() {
       <Ambient />
       <BrandBar syncStatus={sync.enabled ? sync.status : null} />
       <div className="app-body">
+        {handoff && <p role="status" style={{ padding: '16px 24px' }}>{handoff} <a href="https://syed-papers.vercel.app/">Back to papers</a></p>}
         {route.name === 'project' && route.projectId ? (
           <ProjectView projectId={route.projectId} stageId={route.stageId} />
         ) : route.name === 'examples' ? (

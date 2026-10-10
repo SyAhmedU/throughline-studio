@@ -56,6 +56,15 @@ export function Hub() {
     // main#main: the skip-link target and screen-reader landmark — ProjectView
     // carries its own; every routed view needs one
     <main className="hub" id="main">
+      <section className="hero hero-compact" aria-label="Existing research">
+        <p className="hero-kicker">Continue the work already prepared</p>
+        <h2 className="section-h2">Your 22 working papers</h2>
+        <p>Open a review or protocol on the papers desk, then choose “Continue in Studio” to bring its question and source drafts into this workspace.</p>
+        <div className="hero-cta">
+          <a className="btn btn-fill" href="https://syed-papers.vercel.app/">Open my papers →</a>
+          <a className="btn btn-ghost" href="https://syahmedu.github.io/research-suite/#research-directory">All research libraries &amp; tools</a>
+        </div>
+      </section>
       <KitchenWelcome projects={projects}/>
       {/* ── Hero — full pitch for strangers, a slim band for returners ── */}
       {returning ? (

@@ -38,8 +38,8 @@ export function BrandBar({ syncStatus }: { syncStatus?: SyncStatus | null }) {
 
       <div className="bar-spacer" />
 
-      <a className="bar-link" href="https://syahmedu.github.io/nexus/" target="_blank" rel="noopener noreferrer">
-        All projects <Icon name="external" size={13} />
+      <a className="bar-link" href="https://syahmedu.github.io/research-suite/" target="_blank" rel="noopener noreferrer">
+        Research home <Icon name="external" size={13} />
       </a>
 
       {syncStatus && <SyncPill status={syncStatus} />}
