@@ -16,14 +16,24 @@
 | 6 | **Write** | Academic writing | JournalTime |
 | 7 | **Publish** | Where to publish & open science | ScholarScope (Publish) · OSF |
 
-Each stage deep-links into the real, deployed tool with the project's research question seeded as the topic (mirrors the suite hub's `buildDeepLink`).
+Each stage has an embedded workspace, with optional handoffs to the specialist tools. The same study record carries sources, design decisions, instruments, collection plans, captured analysis and manuscript sections through the journey.
+
+## Research Kitchen and manuscript delivery
+
+The Kitchen uses a cooking narrative alongside the research terminology: open the pantry, decide the dish, select utensils, prepare ingredients, analyze, plate the manuscript and serve/respond. Twenty existing recipes cover quantitative, qualitative, mixed-methods, secondary-data and evidence-screening work. Recipe selection is guidance; it does not establish design validity.
+
+Write includes a section outline, live draft word counts, assembled preview and named manuscript versions. Restoring a version first saves the current draft. The most recent 12 versions are retained with a 2 MB history cap.
+
+Publish includes recorded-evidence checks, a structured reviewer-response tracker and a study ZIP containing the exact project backup, manuscript, planning scaffold, saved reading list, analysis record, review checklist and reviewer responses. A SHA-256 manifest supports integrity checks. Packages may contain private data and transcripts; sharing and external submission remain deliberate author actions. Import the included JSON as a separate study copy.
+
+The visual system is a professional expedition interface: navy/teal/gold, connected milestones, next actions and dark/light themes. Progress reflects recorded artifacts and current author reviews; it is not a scientific-quality score.
 
 ## Stack
 
 - **Vite + React 19 + TypeScript** — hand-rolled hash router (zero routing deps).
-- **Hand-crafted CSS design system** (`src/styles/theme.css` tokens + `app.css`) in the Syed Fire / Throughline house style — no Tailwind, dark default + light, `prefers-reduced-motion` honoured.
-- **`/api/generate`** — Vercel serverless AI seam. Dependency-free `fetch` to the Vercel AI Gateway; degrades gracefully (503 → offline mode) when `AI_GATEWAY_API_KEY` is unset. Enforces the suite's **no-fabrication** rule in its system prompt.
-- **localStorage** persistence (`tls_projects`, `tls_active`) — no server; the project is owned by the browser.
+- **Hand-crafted CSS design system** (`theme.css`, `app.css`, `product.css`) — no Tailwind, dark/light themes and reduced-motion support.
+- **`/api/generate`** — Vercel serverless AI SDK endpoint with a client fallback to the suite’s shared backend. AI responses are drafts requiring verification; generation is not source validation.
+- **Local persistence** (`tls_projects`, `tls_active`) with save-recovery controls, JSON import/export and optional Supabase account synchronization when configured.
 
 ## Develop
 
@@ -58,4 +68,6 @@ api/generate.js         shared AI backend (Vercel)
 
 ## Status
 
-**Scaffold.** The spine, routing, persistence, theming, and the deep-linked tool hand-offs are functional. The per-stage workspaces (`StageShell`) are the seam where the embedded experiences land next — each stage panel is ready to grow into the real tool.
+All seven stages have working embedded flows. See `NOTES.md` for actual capabilities, runtime/data limits, validation evidence and deployment status. Studio supports conducting and documenting research; it does not obtain ethics approvals, recruit participants, guarantee source coverage or submit to journals automatically. Existing specialist handoffs remain available, including journal formatting.
+
+Checks: `npm run build`, `npm run test:flow`, `npm run test:delivery`, `npm run test:kitchen`, `node storage.verify.ts`. Browser checks: `python scripts/check-research-home.py` and `python scripts/check-product.py`; the latter supports `--live` with isolated browser-local simulated records.

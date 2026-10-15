@@ -10,7 +10,7 @@ import { Icon } from '../components/Icon'
 import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { STAGES, stageDef } from '../lib/stages'
 import { Checkpoint, StudyContext } from '../components/StudyJourney'
-import { flowTitle, isMetaStudy } from '../lib/studyFlow'
+import { flowTitle, isMetaStudy, requirements, reviewed } from '../lib/studyFlow'
 import { getProject, setStageNotes } from '../lib/store'
 import type { Project, StageId, StageStatus } from '../lib/types'
 
@@ -60,6 +60,10 @@ export function StageShell({
 
   const idx = STAGES.findIndex((s) => s.id === stageId)
   const next = STAGES[idx + 1]
+  const previous = STAGES[idx - 1]
+  const checks = requirements(project, stageId)
+  const recorded = checks.filter(check => check.met).length
+  const isReviewed = reviewed(project, stageId)
   const carrySub = carrySummary(project, stageId)
   const shown = derivedStatus(project, stageId)
 
@@ -95,10 +99,15 @@ export function StageShell({
         {shown === 'todo' && <p className="stage-blurb">{def.blurb}</p>}
       </header>
 
+      <div className="stage-review-strip">
+        <div><strong>{isReviewed ? 'Author review recorded' : project.journey?.reviews[stageId] ? 'Review reopened after changes' : 'Stage review'}</strong><span>{recorded} of {checks.length} requirements recorded</span></div>
+        <button className="btn btn-ghost btn-sm" onClick={() => { const panel = document.getElementById('stage-checkpoint'); panel?.scrollIntoView({ block: 'center', behavior: 'instant' }); panel?.focus({ preventScroll: true }) }}>Review requirements ↓</button>
+      </div>
+
       <div className="stage-grid">
         <div className="stage-main">
           <StudyContext project={project} stage={stageId} onChange={onChange} />
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="stage-loading" role="status">Opening {def.title.toLowerCase()} workspace…<span>Preparing the tools for this stage.</span></div>}>
             <Body project={project} onChange={onChange} topic={topic} />
           </Suspense>
 
@@ -126,18 +135,18 @@ export function StageShell({
 
           <Checkpoint project={project} stage={stageId} onChange={onChange} onPick={onPick} />
 
-          {next && (
-            <button className="btn btn-next" onClick={() => onPick(next.id)}>
-              Next: {flowTitle(project, next.id)} <Icon name="arrow" size={15} />
-            </button>
-          )}
         </aside>
       </div>
+      <nav className="stage-pagination" aria-label="Adjacent stages">
+        {previous ? <button className="btn btn-ghost" onClick={() => onPick(previous.id)}>← {flowTitle(project, previous.id)}</button> : <span/>}
+        <small>Browsing does not mark a stage reviewed.</small>
+        {next ? <button className="btn btn-ghost" onClick={() => onPick(next.id)}>{flowTitle(project, next.id)} →</button> : <span/>}
+      </nav>
     </section>
   )
 }
 
 function StatusPill({ status }: { status: StageStatus }) {
-  const label = status === 'done' ? 'Done' : status === 'active' ? 'In progress' : 'Not started'
+  const label = status === 'done' ? 'Reviewed by you' : status === 'active' ? 'In progress' : 'Not started'
   return <span className={`status-pill is-${status}`}>{label}</span>
 }

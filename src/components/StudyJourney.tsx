@@ -8,8 +8,12 @@ export function StudyJourney({ project: p, onPick }: { project: Project; onPick:
   const missing = next ? requirements(p, next).find(r => !r.met)?.label : ''
   return <section className="study-journey" aria-label="Study journey">
     <div className="journey-heading"><div><span className="journey-kicker">One study · one working record</span><h2>{next ? `Next: ${flowTitle(p, next)}` : 'All checkpoints reviewed'}</h2><p>{missing || (next ? 'Review the work in this step, then continue.' : 'Keep the submission record current. Changes reopen affected checkpoints.')}</p></div>{next && <button className="btn btn-fill" onClick={() => onPick(next)}>Continue study →</button>}</div>
-    <ol className="journey-track">{FLOW.map((id, i) => <li key={id}><button onClick={() => onPick(id)} className={reviewed(p, id) ? 'is-reviewed' : id === next ? 'is-next' : ''}><span>{reviewed(p, id) ? '✓' : String(i + 1).padStart(2, '0')}</span>{flowTitle(p, id)}</button></li>)}</ol>
-    <small>{FLOW.filter(id => reviewed(p, id)).length}/7 checkpoints reviewed by you · upstream edits reopen downstream review · browse any step</small>
+    <details className="journey-overview"><summary>{FLOW.filter(id => reviewed(p, id)).length}/7 checkpoints reviewed by you <span>View study overview</span></summary>
+      <ol className="journey-review-list">{FLOW.map(id => {
+        const list = requirements(p, id), done = reviewed(p, id), stale = !!p.journey?.reviews[id] && !done
+        return <li key={id}><button onClick={() => onPick(id)}><strong>{flowTitle(p, id)}</strong><span>{done ? 'Reviewed' : stale ? 'Review reopened' : `${list.filter(r => r.met).length}/${list.length} requirements recorded`}</span><span aria-hidden="true">→</span></button></li>
+      })}</ol><small>Upstream edits reopen affected reviews. These are author checkpoints, not external approvals.</small>
+    </details>
   </section>
 }
 
@@ -17,9 +21,9 @@ export function Checkpoint({ project: p, stage, onChange, onPick }: { project: P
   const list = requirements(p, stage), done = reviewed(p, stage)
   const prior = FLOW.slice(0, FLOW.indexOf(stage)).find(id => !reviewed(p, id))
   const stale = p.journey?.reviews[stage] && !done
-  return <div className="side-card checkpoint"><h3 className="side-h3">Review & hand off</h3>
+  return <div className="side-card checkpoint" id="stage-checkpoint" tabIndex={-1}><h3 className="side-h3">Review & hand off</h3>
     <p>{done ? 'Reviewed. This work carries into the following steps.' : stale ? 'Work changed since your review. Check the updated evidence before continuing.' : 'Complete these items, then confirm your review.'}</p>
-    <ul>{list.map((r, i) => <li key={i}><span aria-hidden>{r.met ? '✓' : '○'}</span>{r.label}</li>)}</ul>
+    <ul>{list.map((r, i) => <li key={i} data-met={r.met}><span aria-label={r.met ? 'Recorded:' : 'Missing:'}>{r.met ? '✓' : '○'}</span>{r.label}</li>)}</ul>
     {prior && <button className="btn btn-ghost btn-sm" onClick={() => onPick(prior)}>Review {flowTitle(p, prior)} first →</button>}
     <button className="btn btn-fill" disabled={!!prior || list.some(r => !r.met)} onClick={() => {
       const fresh = getProject(p.id) || p

@@ -15,6 +15,7 @@ import { fmtLockDate, preregLock } from '../lib/prereg'
 import { deepLink, stageDef, toolLabel } from '../lib/stages'
 import { useStageData } from '../lib/useStageData'
 import type { Project } from '../lib/types'
+import { ResearchDelivery } from '../components/ResearchDelivery'
 
 interface PublishData extends Record<string, unknown> {
   preregistered?: boolean
@@ -95,6 +96,7 @@ export function PublishBody({
         <label className="bld-field"><span className="bld-label">Reviewer comments and response plan</span><textarea className="bld-textarea" rows={4} value={form.revisionPlan || ''} onChange={e => update({ revisionPlan: e.target.value })} /></label>
         <a href={`#/p/${project.id}/write`}>Return to the manuscript for revisions →</a>
       </section>
+      <ResearchDelivery project={project} onChange={onChange} />
       {/* the frozen preregistration */}
       <section className="bld-section">
         <h2 className="bld-h">Preregistration</h2>

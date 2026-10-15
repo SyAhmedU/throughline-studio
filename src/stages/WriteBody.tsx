@@ -18,6 +18,7 @@ import type { Project } from '../lib/types'
 import { plannedMethods } from '../lib/manuscript'
 import { protocolSections } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
+import { ManuscriptDesk } from '../components/ManuscriptDesk'
 
 interface WriteData extends Record<string, unknown> {
   title?: string
@@ -145,6 +146,7 @@ export function WriteBody({
 
   return (
     <div className="bld">
+      <ManuscriptDesk project={project} onApply={patch => update(patch as Partial<WriteData>)} />
       <section className="study-context"><h2>One manuscript, assembled from this study</h2><p>Fill empty sections from your question, plan, captured results and source references. Existing writing stays intact. Methods remain labelled as planned until you reconcile them with what happened.</p><button className="btn btn-fill" onClick={() => {
         const patch: Partial<WriteData> = {}
         for (const key of ['intro', 'methods', 'results', 'references'] as const) if (!form[key]?.trim() && drafts[key]) patch[key] = drafts[key]
@@ -307,7 +309,7 @@ function referencesDraft(f: FrameData, scales: SavedScale[], papers: ReturnType<
 // ── bits ─────────────────────────────────────────────────────────────────────
 function Section({ label, action, children }: { label: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="bld-section">
+    <section className="bld-section" id={`draft-${({ Introduction: 'intro', Method: 'methods', 'Author contributions & declarations': 'credit' } as Record<string, string>)[label] || label.toLowerCase()}`}>
       <div className="bld-section-head">
         <h2 className="bld-h" style={{ margin: 0 }}>{label}</h2>
         {action}

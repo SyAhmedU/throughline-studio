@@ -2,11 +2,11 @@
 // Throughline Studio — artifact-derived stage progress.
 // A stage is "in progress" because it HAS something (papers saved, hypotheses
 // written, a locked prereg, captured results) — not because the user flipped a
-// pill. "Done" stays a human judgment (research stages don't finish by count),
-// so the manual done flag wins; everything below it is derived.
+// pill. Completion requires an author review matching the current evidence;
+// a stale legacy done flag alone cannot establish reviewed status.
 // ============================================================================
 
-import { reviewed } from './studyFlow'
+import { reviewed, requirements } from './studyFlow'
 import { readingList } from './corpus'
 import type { Project, StageId, StageStatus } from './types'
 
@@ -57,11 +57,12 @@ export function carrySummary(p: Project, stageId: StageId): string | null {
   }
 }
 
-/** Manual 'done' wins; otherwise 'active' the moment real artifacts exist. */
+/** Completion requires a current author review; recorded work means active. */
 export function derivedStatus(p: Project, stageId: StageId): StageStatus {
   const manual = p.stages[stageId]?.status ?? 'todo'
   if (reviewed(p, stageId)) return 'done'
   if (manual === 'done') return 'active'
   if (carrySummary(p, stageId) !== null) return 'active'
+  if (p.stages[stageId].notes.trim() || requirements(p, stageId).some(requirement => requirement.met)) return 'active'
   return manual
 }

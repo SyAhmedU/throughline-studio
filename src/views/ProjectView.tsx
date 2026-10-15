@@ -16,6 +16,9 @@ import type { Project, StageId } from '../lib/types'
 import { StudyJourney } from '../components/StudyJourney'
 import { seedArchivedPlan, flowTitle } from '../lib/studyFlow'
 import { StageShell } from '../stages/StageShell'
+import { WorkspaceNavigator } from '../components/WorkspaceNavigator'
+import { StageBoundary } from '../components/StageBoundary'
+import './Workspace.css'
 
 export function ProjectView({
   projectId,
@@ -65,12 +68,12 @@ export function ProjectView({
 
   if (!project) {
     return (
-      <div className="notfound">
+      <main className="notfound" id="main">
         <p>That project could not be found.</p>
         <button className="btn btn-fill" onClick={() => navigate('/')}>
           <Icon name="back" size={15} /> Back to projects
         </button>
-      </div>
+      </main>
     )
   }
 
@@ -88,18 +91,18 @@ export function ProjectView({
    *  browser while cloud sync is down, so give users a way out (import lives on
    *  the hub's projects shelf). */
   function exportProject() {
-    const p = project!
+    const p = getProject(project!.id) || project!
     const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     const slug = (p.title || 'project').replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '-').toLowerCase()
     a.download = `${slug || 'project'}.throughline.json`
     a.click()
-    URL.revokeObjectURL(a.href)
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
   return (
-    <div className="workspace">
+    <div className="workspace workspace-refined">
       <div className="ws-header">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> Projects
@@ -111,6 +114,7 @@ export function ProjectView({
           aria-label="Project title"
         />
         {project.field && <span className="ws-field">{project.field}</span>}
+        <WorkspaceNavigator project={project} onPick={pick} />
         {/* SYED-CONCEPT · Mission Control: evidence coverage — stages that
             actually carry artifacts (derived, never a vanity number) */}
         {(() => {
@@ -156,18 +160,20 @@ export function ProjectView({
         {!project.workingPaper.planVersion && !project.stages.collect.data.preregLockedAt && <p><button className="btn btn-fill" onClick={() => patch(p => seedArchivedPlan(p))}>Fill empty plan fields from archive</button></p>}
         {project.workingPaper.documents.map(d => <details key={d.kind}><summary>{d.kind} · archived draft</summary><pre>{d.text}</pre></details>)}
       </details>}
-      <ThreadTray project={project} active={active} onPick={pick} />
+      <details className="ws-evidence-drawer"><summary>Evidence carried through this study</summary><ThreadTray project={project} active={active} onPick={pick} /></details>
+
+      <div className="ws-mobile-stage"><label htmlFor="workspace-stage-select">Current stage</label><select id="workspace-stage-select" value={active} onChange={e => pick(e.target.value as StageId)}>{STAGES.map(stage => <option key={stage.id} value={stage.id}>{stage.n}. {flowTitle(project, stage.id)}</option>)}</select></div>
 
       <div className="ws-body">
         <Spine project={project} activeStage={active} onPick={pick} />
         <main className="ws-stage" id="main">
-          <StageShell
+          <StageBoundary key={`${project.id}:${active}`}><StageShell
             key={`${active}:${project.workingPaper?.planVersion || 0}`}
             project={project}
             stageId={active}
             onChange={(p) => setProject(p)}
             onPick={pick}
-          />
+          /></StageBoundary>
         </main>
       </div>
     </div>
@@ -189,7 +195,7 @@ function ThreadTray({
   const items = STAGES.map((s) => ({ s, carry: carrySummary(project, s.id) })).filter(
     (x): x is { s: (typeof STAGES)[number]; carry: string } => x.carry !== null,
   )
-  if (items.length === 0) return null
+  if (items.length === 0) return <p className="ws-evidence-empty">Saved papers, plans, analysis captures and manuscript sections will appear here as you work.</p>
   return (
     <div className="thread-tray" role="navigation" aria-label="What the thread carries so far">
       <span className="thread-tray-label">

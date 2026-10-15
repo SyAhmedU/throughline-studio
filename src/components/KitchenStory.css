@@ -1,0 +1,28 @@
+.kitchen-story { border:1px solid var(--product-line); background:var(--product-surface); color:var(--product-ink); border-radius:12px; padding:20px; margin:18px 0; }
+.kitchen-welcome .k-menu { align-self:start; }
+.kitchen-story summary { cursor:pointer; font-weight:600; font-size:15px; }
+.kitchen-story summary small { display:block; font-size:11px; color:var(--product-muted); font-weight:400; margin-top:7px; }
+.kitchen-story-intro { font-size:14px; line-height:1.8; margin:22px 0; color:var(--product-muted); }
+.kitchen-story ol { list-style:none; padding:0; margin:24px 0; }
+.kitchen-story li { display:grid; grid-template-columns:38px minmax(0,1fr); gap:16px; padding-bottom:25px; position:relative; }
+.kitchen-story li:not(:last-child)::before { content:''; position:absolute; left:17px; top:37px; bottom:0; border-left:1px dashed var(--product-line); }
+.kitchen-course-number { display:grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--product-line); color:var(--mission-gold); background:var(--product-soft); font:12px var(--mono); }
+.kitchen-course-label { font:10px var(--mono); text-transform:uppercase; letter-spacing:.08em; color:var(--product-muted); margin:0 0 8px; }
+.kitchen-story h3, .recipe-story h3 { margin:0 0 12px; font:500 22px var(--serif); color:var(--product-ink); }
+.kitchen-story li p:not(.kitchen-course-label) { font-size:13px; line-height:1.8; color:var(--product-muted); margin:10px 0; }
+.kitchen-story .kitchen-course-action { padding:12px; border-radius:8px; background:var(--product-soft); }
+.kitchen-story a { color:var(--product-accent); font-size:12px; display:inline-block; padding:8px 0; }
+.kitchen-story-note { border-top:1px solid var(--product-line); padding-top:16px; color:var(--product-muted); font-size:11px; line-height:1.7; }
+.recipe-story { margin:20px 0; padding:22px; background:var(--product-surface); color:var(--product-ink); border:1px solid var(--product-line); border-top:3px solid var(--mission-gold); border-radius:12px; }
+.recipe-story > p:not(.kitchen-course-label) { color:var(--product-muted); font-size:13px; line-height:1.8; }
+.recipe-story-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:18px; }
+.recipe-story-grid > div { padding:16px; background:var(--product-soft); border-radius:8px; min-width:0; }
+.recipe-story-grid h4 { font-size:13px; margin:0 0 10px; color:var(--product-ink); }
+.recipe-story-grid p, .recipe-story-grid li { color:var(--product-muted); font-size:12px; line-height:1.75; }
+.recipe-story-grid ul { padding-left:18px; margin:0; }
+.recipe-story-limit { border-top:1px solid var(--product-line); padding-top:15px; margin-bottom:0; }
+.kitchen-serving { background:var(--product-soft); border:1px solid var(--product-line); border-radius:12px; padding:20px; margin-top:22px; }
+.kitchen-serving h3 { font:500 22px var(--serif); color:var(--product-ink); margin:0 0 10px; }
+.kitchen-serving p { color:var(--product-muted); font-size:13px; line-height:1.75; }
+.kitchen-serving a { display:inline-block; padding:10px 14px; margin:6px 10px 0 0; border:1px solid var(--product-line); border-radius:8px; color:var(--product-accent); text-decoration:none; font-size:13px; }
+@media(max-width:550px) { .recipe-story-grid { grid-template-columns:1fr; } .kitchen-story,.recipe-story { padding:16px; } .kitchen-story li { gap:10px; grid-template-columns:32px minmax(0,1fr); } .kitchen-course-number { width:30px; height:30px; } .kitchen-story li:not(:last-child)::before { left:14px; top:31px; } }

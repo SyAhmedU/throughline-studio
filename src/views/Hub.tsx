@@ -1,399 +1,137 @@
-// ============================================================================
-// Throughline Studio — hub (landing + dashboard).
-// Hero, the seven-stage throughline showcase, and the projects shelf
-// (create / resume / delete). This is the front door of the shippable product.
-// ============================================================================
-
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import workingPapers from '../lib/workingPaperCatalog.json'
 import { continueWorkingPaper } from '../lib/workingPapers'
-import { nextAction, flowTitle } from '../lib/studyFlow'
-import KitchenWelcome from '../components/KitchenWelcome'
+import { FLOW, nextAction, flowTitle, requirements, reviewed } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
 import { VideoLightbox } from '../components/VideoLightbox'
-import { derivedStatus } from '../lib/artifacts'
 import { navigate } from '../lib/router'
-import { STAGES } from '../lib/stages'
-import { createProject, deleteProject, loadProjects, progress, saveProject, subscribe } from '../lib/store'
+import { createProject, deleteProject, loadProjects, saveProject, subscribe } from '../lib/store'
 import type { Project } from '../lib/types'
 import { restoredProjects } from '../lib/backup'
+import './ResearchHome.css'
+
+const KitchenWelcome = lazy(() => import('../components/KitchenWelcome'))
+
+const editedDate = (p: Project) => new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+const reviewCount = (p: Project) => FLOW.filter(id => reviewed(p, id)).length
+const resume = (p: Project) => navigate(`/p/${p.id}/${nextAction(p) || 'publish'}`)
 
 export function Hub() {
   const [projects, setProjects] = useState<Project[]>(() => loadProjects())
   const [showNew, setShowNew] = useState(false)
   const [showTour, setShowTour] = useState(false)
-  const [paperId, setPaperId] = useState('paper-4-sep-2024')
+  const [showRecipes, setShowRecipes] = useState(false)
+  const [paperId, setPaperId] = useState(workingPapers[0]?.id || '')
   const [paperState, setPaperState] = useState('')
+  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [importError, setImportError] = useState('')
+  function refresh() { setProjects(loadProjects()) }
+  useEffect(() => subscribe(refresh), [])
+  const ordered = [...projects].sort((a, b) => b.updatedAt - a.updatedAt)
+  const current = ordered[0]
+  const next = current ? nextAction(current) : null
+  const missing = current && next ? requirements(current, next).filter(r => !r.met) : []
+  const visible = ordered.filter(p => {
+    const matches = `${p.title} ${p.question} ${p.field}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+    const complete = nextAction(p) === null
+    return matches && (filter === 'all' || (filter === 'reviewed' ? complete : !complete))
+  })
   async function openPaper() {
     setPaperState('Opening study…')
-    try { const p = await continueWorkingPaper(paperId); navigate(`/p/${p.id}/${nextAction(p) || p.current}`); setPaperState('') }
+    try { resume(await continueWorkingPaper(paperId)); setPaperState('') }
     catch (e) { setPaperState(e instanceof Error ? e.message : 'Could not open this paper.') }
   }
-
-  function refresh() {
-    setProjects(loadProjects())
-  }
-
-  // Refresh when the store changes — including projects pulled down from the
-  // cloud after sign-in (which arrive asynchronously).
-  useEffect(() => subscribe(refresh), [])
-
-  function start(title: string, field: string) {
-    const p = createProject(title, field)
-    navigate(`/p/${p.id}`)
-  }
-
-  /** Restore a project from the JSON backup the workspace header exports —
-   *  the escape hatch while cloud sync is down (projects otherwise live only
-   *  in one browser's localStorage). */
-  async function importFile(f: File) {
+  async function importFile(file: File) {
+    setImportError('')
     try {
-      if (f.size > 20_000_000) throw new Error('Backup is larger than 20 MB')
-      const copies = restoredProjects(await f.text())
+      if (file.size > 20_000_000) throw new Error('Backup is larger than 20 MB')
+      const copies = restoredProjects(await file.text())
       copies.forEach(saveProject)
       refresh()
-      navigate(`/p/${copies[0].id}`)
-    } catch (e) {
-      alert(`Couldn't import — ${(e as Error).message}. Use Export in a project's header to create a valid backup.`)
-    }
+      resume(copies[0])
+    } catch (e) { setImportError(`Could not import: ${(e as Error).message}. Choose a Studio project or recovery backup.`) }
   }
+  return <main className="hub research-home" id="main">
+    <header className="rh-heading">
+      <div><p className="rh-eyebrow">Throughline Studio / Your workspace</p>
+        <h1>{current ? 'Move your research forward.' : 'A question worth pursuing.'}</h1>
+        <p className="rh-intro">{current ? 'Your evidence, decisions and writing. One continuous study.' : 'Build a study from the first source to the final manuscript, with the evidence connected at every step.'}</p>
+      </div>
+      <button className="btn btn-fill" onClick={() => setShowNew(true)}><Icon name="plus" size={16}/> New research project</button>
+    </header>
 
-  // a returning user has projects: lead with the work, retire the pitch
-  const returning = projects.length > 0
-
-  return (
-    // main#main: the skip-link target and screen-reader landmark — ProjectView
-    // carries its own; every routed view needs one
-    <main className="hub" id="main">
-      <section className="hero hero-compact" aria-label="Existing research">
-        <p className="hero-kicker">Continue the work already prepared</p>
-        <h2 className="section-h2">Your 22 working papers</h2>
-        <p>Choose a prepared study. Its source review, editable protocol and next action stay together through analysis, writing and submission.</p>
-        <div className="bld-grid" style={{ margin: '18px 0' }}><label className="bld-field"><span className="bld-label">Prepared working paper</span><select className="disc-select" value={paperId} onChange={e => setPaperId(e.target.value)}>{workingPapers.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label><button className="btn btn-fill" style={{ alignSelf: 'end' }} disabled={paperState === 'Opening study…'} onClick={openPaper}>Continue selected study →</button></div>
-        {paperState && <p role="status">{paperState}</p>}
-        {projects.length > 0 && <p>Most recently edited: <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/p/${projects[0].id}/${nextAction(projects[0]) || projects[0].current}`)}>{projects[0].title} · {flowTitle(projects[0], nextAction(projects[0]) || projects[0].current)} →</button></p>}
-        <div className="hero-cta">
-          <a className="btn btn-ghost" href="https://syed-papers.vercel.app/">Read original papers ↗</a>
-          <a className="btn btn-ghost" href="https://syahmedu.github.io/research-suite/#research-directory">All research libraries &amp; tools</a>
-        </div>
-      </section>
-      <KitchenWelcome projects={projects}/>
-      {/* ── Hero — full pitch for strangers, a slim band for returners ── */}
-      {returning ? (
-        <section className="hero hero-compact">
-          <p className="hero-kicker">The shippable research workspace</p>
-          <div className="hero-compact-row">
-            <h1 className="hero-title hero-title-compact">
-              Pick up the thread<span className="grad-text">.</span>
-            </h1>
-            <div className="hero-cta hero-cta-compact">
-              <button className="btn btn-fill" onClick={() => setShowNew(true)}>
-                <Icon name="plus" size={15} /> New research project
-              </button>
-              <a
-                className="btn btn-ghost"
-                href="#/map"
-                onClick={(e) => {
-                  e.preventDefault()
-                  navigate('/map')
-                }}
-              >
-                🧵 Knowledge graph
-              </a>
-              <a
-                className="btn btn-ghost"
-                href="#/examples"
-                onClick={(e) => {
-                  e.preventDefault()
-                  navigate('/examples')
-                }}
-              >
-                Worked examples
-              </a>
-              <button className="btn btn-ghost" onClick={() => setShowTour(true)}>
-                ▶ Tour
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="hero">
-          <div className="hero-thread" aria-hidden="true" />
-          <p className="hero-kicker">The shippable research workspace</p>
-          <h1 className="hero-title">
-            Conduct research, <span className="grad-text">A&nbsp;→&nbsp;Z</span>
-          </h1>
-          <p className="hero-sub">
-            One connected throughline — discover the literature, frame the question, build the
-            measures, collect and analyze the data, then write and place the paper. Every step
-            carries the last one forward.
-          </p>
-          <div className="hero-cta">
-            <button className="btn btn-fill btn-lg" onClick={() => setShowNew(true)}>
-              <Icon name="plus" size={17} /> New research project
-            </button>
-            <a
-              className="btn btn-ghost btn-lg"
-              href="#/map"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate('/map')
-              }}
-            >
-              🧵 Explore the knowledge graph
-            </a>
-            <a
-              className="btn btn-ghost btn-lg"
-              href="#/examples"
-              onClick={(e) => {
-                e.preventDefault()
-                navigate('/examples')
-              }}
-            >
-              See 20 worked examples
-            </a>
-          </div>
-
-          {/* muted living preview; click for the full narrated tour */}
-          <button
-            className="hero-tour"
-            onClick={() => setShowTour(true)}
-            aria-label="Watch the 90-second narrated tour"
-          >
-            <video
-              className="hero-tour-video"
-              src="/tour.mp4"
-              poster="/tour-poster.jpg"
-              muted
-              loop
-              playsInline
-              autoPlay={!prefersReducedMotion()}
-              preload="metadata"
-              aria-hidden="true"
-              tabIndex={-1}
-            />
-            <span className="hero-tour-overlay">
-              <span className="hero-tour-play">▶</span>
-              Watch the 90-second tour — with sound
-            </span>
+    {current ? <section className="rh-focus" aria-labelledby="resume-title">
+      <div className="rh-focus-main">
+        <p className="rh-eyebrow">Your active research journey</p>
+        <h2 id="resume-title">{current.title}</h2>
+        <p className="rh-question">{current.question || 'A working title is enough to begin. Shape the question as you read.'}</p>
+        <div className="rh-meta"><span>{current.field || 'Research project'}</span><span>Edited {editedDate(current)}</span></div>
+        <button className="btn btn-fill" onClick={() => resume(current)}>{next ? `Continue to ${flowTitle(current, next)}` : 'Open publication plan'} <Icon name="arrow" size={15}/></button>
+        <ol className="rh-steps" aria-label="Study checkpoints">{FLOW.map((id, i) => <li key={id}>
+          <button className={reviewed(current, id) ? 'is-reviewed' : next === id ? 'is-next' : ''} aria-current={next === id ? 'step' : undefined} onClick={() => navigate(`/p/${current.id}/${id}`)}>
+            <span>{reviewed(current, id) ? '✓' : String(i + 1).padStart(2, '0')}</span>{flowTitle(current, id)}
           </button>
-        </section>
-      )}
+        </li>)}</ol>
+      </div>
+      <aside className="rh-next" aria-label="Next checkpoint">
+        <p className="rh-eyebrow">{next ? 'Your next move' : 'Checkpoint review complete'}</p>
+        <h3>{next ? flowTitle(current, next) : 'Keep the work moving'}</h3>
+        {missing.length ? <ul>{missing.slice(0, 3).map(r => <li key={r.label}>{r.label}</li>)}</ul> : <p>{next ? 'The required fields are present. Review the evidence in this stage before marking it reviewed.' : 'All seven checkpoints have an author review. Track decisions and revisions in your publication plan.'}</p>}
+        {missing.length > 3 && <p>+ {missing.length - 3} more requirements in this stage</p>}
+        <div className="rh-review-count"><strong>{reviewCount(current)}<span> / 7</span></strong><span>checkpoints reviewed by you</span></div>
+        <p className="rh-note">Reviews reflect your recorded checks. They do not establish study validity or journal acceptance.</p>
+      </aside>
+    </section> : <section className="rh-start" aria-label="Start a study">
+      <p className="rh-eyebrow">From question to contribution</p>
+      <h2>Give your next idea a place to grow.</h2>
+      <p>Start with a working title, continue a prepared paper, or choose a method below. Your study begins without invented evidence or results.</p>
+      <ol className="rh-start-steps">{['Discover evidence', 'Design the study', 'Analyze your data', 'Write & publish'].map((label, i) => <li key={label}><span>0{i + 1}</span>{label}</li>)}</ol>
+    </section>}
 
-      {/* ── Projects shelf ────────────────────────────────────────── */}
-      <section className="shelf">
-        <div className="shelf-head">
-          <h2 className="section-h2">Your projects</h2>
-          <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }} title="Import a project or recovery backup as separate copies; existing studies stay unchanged">
-            <Icon name="arrow" size={14} /> Import
-            <input
-              type="file"
-              accept=".json,application/json"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                e.target.value = ''
-                if (f) void importFile(f)
-              }}
-            />
-          </label>
-          {projects.length > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowNew(true)}>
-              <Icon name="plus" size={14} /> New
-            </button>
-          )}
+    <section className="rh-projects" aria-labelledby="projects-title">
+      <div className="shelf-head"><div><p className="rh-eyebrow">Your research shelf</p><h2 className="section-h2" id="projects-title">Studies <span className="rh-total">{projects.length}</span></h2></div>
+        <label className="btn btn-ghost rh-import">Import backup<input type="file" accept=".json,application/json" onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void importFile(file) }}/></label>
+      </div>
+      {importError && <p role="alert">{importError}</p>}
+      {projects.length > 0 ? <>
+        <div className="rh-tools"><label><span>Find a study</span><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search title, question or discipline"/></label>
+          <label><span>Checkpoint status</span><select value={filter} onChange={e => setFilter(e.target.value)}><option value="all">All studies</option><option value="active">Needs review</option><option value="reviewed">All checkpoints reviewed</option></select></label>
         </div>
+        <p className="rh-result-count" role="status">{visible.length} of {projects.length} studies · latest edited first</p>
+        {visible.length ? <div className="project-grid">{visible.map(p => <ProjectCard key={p.id} project={p} onDuplicate={() => {
+          saveProject({ ...structuredClone(p), id: `p_${crypto.randomUUID()}`, title: `${p.title} (copy)`, createdAt: Date.now(), updatedAt: Date.now() }); refresh()
+        }} onDelete={() => { if (confirm(`Delete “${p.title}”? This cannot be undone.`)) { deleteProject(p.id); refresh() } }}/>)}</div> : <div className="rh-empty"><h3>No studies match this view.</h3><p>Try a different phrase or checkpoint status.</p><button className="btn btn-ghost" onClick={() => { setQuery(''); setFilter('all') }}>Clear filters</button></div>}
+      </> : <p className="rh-empty">Your saved studies will appear here. You can also restore a Studio JSON backup.</p>}
+    </section>
 
-        {projects.length === 0 ? (
-          <div className="empty">
-            <div className="empty-thread" aria-hidden="true">
-              <b className="empty-thread-cap">A</b>
-              {STAGES.map((s) => (
-                <span className="empty-thread-node" key={s.id} title={s.title} />
-              ))}
-              <b className="empty-thread-cap">Z</b>
-            </div>
-            <p className="empty-line">Your throughline starts here.</p>
-            <p className="empty-sub">Start a project and walk it from discovery to publication.</p>
-            <button className="btn btn-fill" onClick={() => setShowNew(true)}>
-              <Icon name="plus" size={16} /> Start your first project
-            </button>
-          </div>
-        ) : (
-          <div className="project-grid">
-            {projects.map((p) => (
-              <ProjectCard
-                key={p.id}
-                project={p}
-                onOpen={() => navigate(`/p/${p.id}`)}
-                onDelete={() => {
-                  if (confirm(`Delete “${p.title}”? This cannot be undone.`)) {
-                    deleteProject(p.id)
-                    refresh()
-                  }
-                }}
-                onDuplicate={() => {
-                  const copy: Project = {
-                    ...structuredClone(p),
-                    id: 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-                    title: `${p.title} (copy)`,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  }
-                  saveProject(copy)
-                  refresh()
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── The seven stages — the literal throughline ────────────── */}
-      <section className="stages-show" id="stages">
-        <h2 className="section-h2">The throughline</h2>
-        <p className="section-sub">
-          Seven stages, each one unifying the tools you already use — deep-linked so your topic
-          travels with you.
-        </p>
-        <ol className="stages-rail">
-          <span className="stages-thread" aria-hidden="true" />
-          <span className="stages-thread-fill" aria-hidden="true" />
-          <span className="stages-cap stages-cap-a" aria-hidden="true">A</span>
-          {STAGES.map((s) => (
-            <li className="stage-stop" key={s.id} data-reveal>
-              <span className="stage-stop-node" aria-hidden="true" />
-              <div className="stage-chip" data-n={s.n}>
-                <div className="stage-chip-top">
-                  <span className="stage-chip-icon">
-                    <Icon name={s.id} size={18} />
-                  </span>
-                  <span className="stage-chip-n">{String(s.n).padStart(2, '0')}</span>
-                </div>
-                <h3 className="stage-chip-title">{s.title}</h3>
-                <p className="stage-chip-brief">{s.brief}</p>
-                <div className="stage-chip-tools">
-                  {s.tools.map((t) => (
-                    <span key={t.name} className="tool-tag">
-                      {t.name}
-                    </span>
-                  ))}
-                </div>
-                <p className="stage-chip-carry">→ carries {s.carries}</p>
-              </div>
-            </li>
-          ))}
-          <span className="stages-cap stages-cap-z" aria-hidden="true">Z</span>
-        </ol>
-        <div className="stages-cta">
-          <a
-            href="#/examples"
-            onClick={(e) => {
-              e.preventDefault()
-              navigate('/examples')
-            }}
-          >
-            See the throughline walked on 20 real papers <Icon name="arrow" size={14} />
-          </a>
-        </div>
-      </section>
-
-      <footer className="hub-foot">
-        <span>Throughline Studio</span>
-        <span className="dot-sep">·</span>
-        <span>part of the research suite</span>
-        <span className="dot-sep">·</span>
-        <a href="https://syahmedu.github.io/nexus/" target="_blank" rel="noopener noreferrer">
-          all projects ↗
-        </a>
-      </footer>
-
-      {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreate={start} />}
-      {showTour && (
-        <VideoLightbox src="/tour.mp4" poster="/tour-poster.jpg" label="Product tour video" onClose={() => setShowTour(false)} />
-      )}
-    </main>
-  )
+    <section className="rh-resources" aria-labelledby="resources-title">
+      <div><p className="rh-eyebrow">Start from what you have</p><h2 className="section-h2" id="resources-title">A head start, when you need one.</h2></div>
+      <details className="rh-resource"><summary><span><strong>Prepared working papers</strong><small>{workingPapers.length} source-backed starting points · review and protocol together</small></span><span aria-hidden="true">↗</span></summary>
+        <div className="rh-resource-body"><p>Open the original question and source drafts as an editable study. Existing edits are preserved when you return.</p><div className="rh-archive-form"><label><span>Prepared working paper</span><select value={paperId} onChange={e => setPaperId(e.target.value)}>{workingPapers.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}</select></label><button className="btn btn-fill" disabled={paperState === 'Opening study…'} onClick={openPaper}>Continue selected study →</button></div>{paperState && <p role="status">{paperState}</p>}<a href="https://syed-papers.vercel.app/">Read original papers ↗</a></div>
+      </details>
+      <details className="rh-resource" onToggle={e => setShowRecipes(e.currentTarget.open)}><summary><span><strong>Research Kitchen</strong><small>From choosing the dish to serving the paper · recipes, ingredients and methods</small></span><span aria-hidden="true">↗</span></summary>{showRecipes && <Suspense fallback={<p className="rh-resource-body" role="status">Opening the recipe book…</p>}><KitchenWelcome projects={ordered}/></Suspense>}</details>
+      <nav className="rh-links" aria-label="Research resources"><a href="#/map">Explore the knowledge graph <span>↗</span></a><a href="#/examples">Learn from worked examples <span>↗</span></a><button onClick={() => setShowTour(true)}>Watch the Studio tour <span>↗</span></button><a href="https://syahmedu.github.io/research-suite/#research-directory">All research libraries & tools <span>↗</span></a></nav>
+    </section>
+    <footer className="hub-foot"><span>Throughline Studio</span><span>Evidence → decisions → contribution</span></footer>
+    {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreate={(title, field) => { const p = createProject(title.trim(), field.trim()); resume(p) }}/ >}
+    {showTour && <VideoLightbox src="/tour.mp4" poster="/tour-poster.jpg" label="Product tour video" onClose={() => setShowTour(false)}/>}
+  </main>
 }
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+function ProjectCard({project, onDelete, onDuplicate}: {project: Project; onDelete: () => void; onDuplicate: () => void}) {
+  const next = nextAction(project)
+  const count = reviewCount(project)
+  return <article className="project-card rh-card">
+    <div className="rh-card-meta"><span>{project.field || 'Research project'}</span><time dateTime={new Date(project.updatedAt).toISOString()}>{editedDate(project)}</time></div>
+    <h3><a href={`#/p/${project.id}/${next || 'publish'}`}>{project.title}</a></h3>
+    <p className="rh-card-question">{project.question || 'Research question not yet recorded.'}</p>
+    <div className="rh-card-progress" aria-label={`${count} of 7 checkpoints reviewed`}>{FLOW.map(id => <span key={id} className={reviewed(project, id) ? 'is-reviewed' : ''}/>)}</div>
+    <p className="rh-card-next">{next ? `Next: ${flowTitle(project, next)}` : 'All checkpoints reviewed'} <span>{count}/7 reviewed</span></p>
+    <div className="rh-card-actions"><button className="btn btn-ghost btn-sm" onClick={() => resume(project)}>Continue <Icon name="arrow" size={13}/></button><div><button className="icon-btn" aria-label={`Duplicate ${project.title}`} title="Duplicate study" onClick={onDuplicate}><Icon name="plus" size={15}/></button><button className="icon-btn" aria-label={`Delete ${project.title}`} title="Delete study" onClick={onDelete}><Icon name="trash" size={15}/></button></div></div>
+  </article>
 }
 
-function ProjectCard({
-  project,
-  onOpen,
-  onDelete,
-  onDuplicate,
-}: {
-  project: Project
-  onOpen: () => void
-  onDelete: () => void
-  onDuplicate: () => void
-}) {
-  const pct = Math.round(progress(project) * 100)
-  return (
-    <article className="project-card" onClick={onOpen} role="button" tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onOpen() }}>
-      <div className="project-card-head">
-        <h3 className="project-card-title">{project.title}</h3>
-        {/* Duplicate sits before Delete so the destructive control is no
-            longer the card's only inline affordance (audit B23) */}
-        <button
-          className="icon-btn"
-          aria-label="Duplicate project"
-          title="Duplicate this project (copies every stage)"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDuplicate()
-          }}
-        >
-          <Icon name="plus" size={15} />
-        </button>
-        <button
-          className="icon-btn"
-          aria-label="Delete project"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-        >
-          <Icon name="trash" size={15} />
-        </button>
-      </div>
-      {project.field && <p className="project-card-field">{project.field}</p>}
-      {project.question && <p className="project-card-q">{project.question}</p>}
-      {/* the project's own mini-spine: seven hue segments, status-aware */}
-      <div className="project-spine" aria-label={`${pct}% complete`} role="img">
-        {STAGES.map((s) => {
-          const st = derivedStatus(project, s.id)
-          const cur = s.id === project.current
-          return (
-            <span
-              key={s.id}
-              className={`project-spine-seg is-${st} ${cur ? 'is-here' : ''}`}
-              title={`${s.title} — ${st}`}
-            />
-          )
-        })}
-      </div>
-      <div className="project-card-foot">
-        <span>{pct}% · stage {stageNumber(project)}/7</span>
-        <span className="project-open">Open <Icon name="arrow" size={13} /></span>
-      </div>
-    </article>
-  )
-}
-
-function stageNumber(p: Project): number {
-  return STAGES.findIndex((s) => s.id === p.current) + 1
-}
-
-// Common disciplines for this suite (OB/management-centred corpus). Offered as
-// one-tap chips so the field isn't a blank box — and, per the IKEA/endowment
-// effect, every small choice the user makes here is a bit of themselves
-// invested in the project before it even opens, which makes them far likelier
-// to carry it forward than an empty two-field form would.
 const FIELD_CHIPS = [
   'Organizational Behavior',
   'Management',
@@ -410,13 +148,27 @@ function NewProjectModal({
   onClose: () => void
   onCreate: (title: string, field: string) => void
 }) {
+  const dialog = useRef<HTMLDivElement>(null)
+  const previousFocus = useRef(document.activeElement as HTMLElement | null)
+  useEffect(() => {
+    return () => previousFocus.current?.focus()
+  }, [])
   const [title, setTitle] = useState('')
   const [field, setField] = useState('')
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <h2 className="modal-title">Start your throughline</h2>
+      <div ref={dialog} className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="new-study-title" onKeyDown={e => {
+        if (e.key === 'Escape') { e.stopPropagation(); onClose() }
+        if (e.key === 'Tab') {
+          const controls = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, [href], select, textarea, [tabindex="0"]')
+          if (!controls?.length) return
+          const first = controls[0], last = controls[controls.length - 1]
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+        }
+      }}>
+        <h2 className="modal-title" id="new-study-title">Start your throughline</h2>
         <p className="modal-sub">Just a working title to begin — everything's editable later, and the whole A→Z workspace opens the moment you do.</p>
         <label className="field-label" htmlFor="np-title">
           Title

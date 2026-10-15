@@ -1,0 +1,95 @@
+.workspace-refined { padding-top:24px; }
+.workspace-refined .ws-header { gap:10px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--line); margin-bottom:20px; }
+.workspace-refined .ws-title-input { font:500 22px var(--serif); min-width:150px; }
+.ws-jump kbd { font:11px var(--mono); color:var(--ink-mute); padding:3px 6px; border:1px solid var(--line); border-radius:4px; }
+.workspace-refined .ws-coverage { display:none; }
+.workspace-refined .ws-question { line-height:1.6; padding:12px 14px; border:1px solid var(--line-2); border-radius:8px; background:var(--surface); font-size:15px; }
+.workspace-refined .study-journey { margin:18px 0 12px; padding:20px 24px; background:var(--surface); border-left:3px solid var(--accent); }
+.workspace-refined .journey-heading h2 { font:500 22px var(--serif); }
+.workspace-refined .journey-kicker { color:var(--ink-mute); opacity:1; font:11px var(--mono); }
+.workspace-refined .journey-heading p { font-size:13px; color:var(--ink-2); opacity:1; }
+.journey-overview { margin-top:16px; border-top:1px solid var(--line); padding-top:13px; }
+.journey-overview summary { font-size:12px; color:var(--ink-2); cursor:pointer; min-height:30px; }
+.journey-overview summary > span { margin-left:16px; color:var(--ink-mute); }
+.journey-review-list { padding:0; margin:12px 0; list-style:none; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.journey-review-list button { display:flex; align-items:center; gap:14px; width:100%; min-height:52px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--ink); text-align:left; cursor:pointer; font:12px var(--sans); }
+.journey-review-list strong { margin-right:auto; font-weight:600; }
+.journey-review-list button > span { font-size:11px; color:var(--ink-2); }
+.ws-evidence-drawer { margin:12px 0 24px; border-bottom:1px solid var(--line); }
+.ws-evidence-drawer > summary { padding:12px 0; font-size:13px; color:var(--ink-2); cursor:pointer; }
+.ws-evidence-empty { font-size:13px; color:var(--ink-mute); }
+.workspace-refined .ws-body { grid-template-columns:190px minmax(0,1fr); gap:28px; }
+.workspace-refined .spine { top:110px; }
+.workspace-refined .spine-cap { display:none; }
+.workspace-refined .spine-node::after { display:none; }
+.workspace-refined .spine-list { margin-top:0; }
+.workspace-refined .spine-brief { font-size:11px; line-height:1.5; }
+.workspace-refined .spine-node-btn { min-height:68px; }
+.workspace-refined .stage-head { margin-bottom:20px; }
+.workspace-refined .stage-head::after, .workspace-refined .stage-head::before { display:none; }
+.workspace-refined .stage-head { background:none; }
+.workspace-refined .stage-num, .workspace-refined .stage-brief-tag { color:var(--ink-mute); }
+.theory-result-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; color:var(--ink-mute); font-size:12px; }
+.workspace-refined .stage-title { font:500 30px var(--serif); }
+.workspace-refined .stage-verb { font:400 16px var(--sans); color:var(--ink-mute); }
+.workspace-refined .stage-grid { grid-template-columns:minmax(0,1fr) 230px; gap:22px; }
+.stage-review-strip { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:24px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:14px 0; }
+.stage-review-strip > div { display:grid; gap:5px; font-size:13px; }
+.stage-review-strip span { font-size:12px; color:var(--ink-mute); }
+.workspace-refined .stage-side { align-self:start; }
+.workspace-refined .side-card { padding:18px; border-radius:12px; }
+.workspace-refined .checkpoint { scroll-margin-top:120px; border-top:3px solid var(--accent); }
+.workspace-refined .checkpoint li { padding-bottom:10px; border-bottom:1px solid var(--line); color:var(--ink-2); }
+.workspace-refined .checkpoint li[data-met="true"] { color:var(--ink); }
+.workspace-refined .checkpoint li > span { flex-shrink:0; }
+.workspace-refined .checkpoint small, .workspace-refined .study-context small { color:var(--ink-mute); opacity:1; }
+.workspace-refined .study-context { padding:24px; gap:20px; border-radius:12px; }
+.workspace-refined .study-context h2 { font:500 22px var(--serif); }
+.workspace-refined .study-context textarea { line-height:1.75; min-height:110px; }
+.workspace-refined .notes { line-height:1.75; }
+.stage-pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; border-top:1px solid var(--line); margin-top:32px; padding:22px 0; }
+.stage-pagination small { font-size:11px; color:var(--ink-mute); }
+.stage-loading, .ws-stage-error { padding:30px; border:1px solid var(--line-2); border-radius:12px; background:var(--surface); font-size:15px; }
+.stage-loading span { display:block; margin-top:10px; color:var(--ink-mute); font-size:13px; }
+.ws-mobile-stage { display:none; }
+.ws-navigator { padding:0; width:min(620px,calc(100% - 32px)); max-height:85dvh; border:1px solid var(--line-2); border-radius:16px; background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+.ws-navigator::backdrop { background:rgba(0,0,0,.55); backdrop-filter:blur(5px); }
+.ws-navigator-inner { padding:24px; }
+.ws-navigator-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.ws-navigator h2 { font:500 26px var(--serif); margin:0; }
+.ws-navigator p { font-size:13px; color:var(--ink-2); }
+.ws-search-label { display:grid; gap:8px; font-size:12px; }
+.ws-search-label input { width:100%; min-height:48px; padding:12px; background:var(--bg-2); border:1px solid var(--line-2); color:var(--ink); border-radius:8px; font:16px var(--sans); }
+.ws-nav-results { display:grid; gap:6px; }
+.ws-nav-result { width:100%; min-height:64px; border:1px solid var(--line); border-radius:8px; background:var(--bg-2); color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px; text-align:left; cursor:pointer; font:14px var(--sans); }
+.ws-nav-result:hover { background:var(--surface-2); border-color:var(--accent); }
+.ws-nav-result strong, .ws-nav-result small { display:block; }
+.ws-nav-result small { font-size:12px; color:var(--ink-mute); margin-top:6px; overflow-wrap:anywhere; }
+.ws-nav-result > span:last-child { flex-shrink:0; color:var(--ink-2); font-size:12px; }
+.ws-navigator-hint { display:block; margin-top:18px; color:var(--ink-mute); font-size:11px; }
+.workspace-refined :is(button,select,input,textarea,summary,a):focus-visible, .ws-navigator :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(max-width:1100px) { .workspace-refined .stage-grid { grid-template-columns:1fr; } .workspace-refined .stage-side { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+@media(max-width:860px) {
+  .workspace-refined .ws-body { display:block; }
+  .workspace-refined .spine { display:none; }
+  .ws-mobile-stage { display:grid; gap:8px; margin:20px 0 24px; font-size:12px; color:var(--ink-2); }
+  .ws-mobile-stage select { width:100%; min-height:48px; padding:10px 14px; border:1px solid var(--line-2); border-radius:8px; background:var(--surface); color:var(--ink); font:16px var(--sans); }
+  .workspace-refined .journey-heading { flex-direction:row; align-items:center; }
+  .workspace-refined .ws-field { display:none; }
+}
+@media(max-width:550px) {
+  .workspace-refined .ws-title-input { order:-1; flex-basis:100%; width:100%; }
+  .workspace-refined .ws-header { gap:8px; }
+  .ws-jump kbd { display:none; }
+  .workspace-refined .study-journey { padding:18px; }
+  .workspace-refined .journey-heading { flex-direction:column; align-items:flex-start; }
+  .journey-overview summary > span { display:block; margin:8px 0 0; }
+  .journey-review-list { grid-template-columns:1fr; }
+  .workspace-refined .stage-side { display:flex; }
+  .stage-review-strip { align-items:flex-start; flex-direction:column; }
+  .workspace-refined .study-context { padding:18px; }
+  .workspace-refined .stage-title { font-size:26px; }
+  .workspace-refined .stage-verb { display:block; margin:8px 0 0; font-size:14px; }
+  .stage-pagination small { order:3; width:100%; text-align:center; }
+  .ws-navigator-inner { padding:18px; }
+}

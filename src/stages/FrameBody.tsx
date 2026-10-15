@@ -102,6 +102,7 @@ export function FrameBody({
 
   // theory grounding
   const [tq, setTq] = useState('')
+  const [theoryLimit, setTheoryLimit] = useState(4)
   const [theories, setTheories] = useState<Theory[] | null>(null)
   const [tStatus, setTStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [tUsage, setTUsage] = useState<Record<string, TheoryUsage>>({})
@@ -125,7 +126,8 @@ export function FrameBody({
       </span>
     ) : null
   }
-  const results = theories ? searchTheories(theories, tq).slice(0, 12) : []
+  const matches = theories ? searchTheories(theories, tq) : []
+  const results = matches.slice(0, theoryLimit)
 
   // suggested lenses — deterministic token match on the study's own words;
   // catalogue loads as soon as the lens is empty so suggestions can render
@@ -437,12 +439,13 @@ export function FrameBody({
                 className="disc-search-input"
                 value={tq}
                 onFocus={ensureTheories}
-                onChange={(e) => setTq(e.target.value)}
-                placeholder="Search 632 theories — name, construct, discipline…"
+                onChange={(e) => { setTq(e.target.value); setTheoryLimit(4) }}
+                aria-label="Search theory catalogue"
+                placeholder={theories ? `Search ${theories.length} theories — name, construct, discipline…` : 'Search theories — name, construct, discipline…'}
               />
             </div>
             {tStatus === 'loading' && <p className="bld-muted">Loading the theory catalogue…</p>}
-            {tStatus === 'error' && <p className="anz-error">Couldn't reach TheoryScope — open it directly below.</p>}
+            {tStatus === 'error' && <div className="anz-error"><p>Couldn't reach TheoryScope. Retry or open it directly below.</p><button className="btn btn-ghost btn-sm" onClick={ensureTheories}>Retry theory catalogue</button></div>}
             {tStatus === 'ready' && (
               <div className="disc-results" style={{ marginTop: 12 }}>
                 {results.map((t) => (
@@ -472,6 +475,7 @@ export function FrameBody({
                   </article>
                 ))}
                 {results.length === 0 && <p className="disc-empty">No theory matches that — try a construct or discipline.</p>}
+                {matches.length > 0 && <div className="theory-result-footer"><span>{results.length} of {matches.length} matches</span>{matches.length > results.length && <button className="btn btn-ghost btn-sm" onClick={() => setTheoryLimit(limit => limit + 8)}>Show more theories</button>}</div>}
               </div>
             )}
           </>

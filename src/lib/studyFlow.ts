@@ -68,7 +68,11 @@ export function requirements(p: Project, id: StageId): Requirement[] {
     }
     case 'analyze': return [r('Capture results from your data or coded evidence', count(d.captures) > 0), r('Record diagnostics, deviations and interpretation', has('analysisReview'))]
     case 'write': return ['abstract', 'intro', 'methods', 'results', 'discussion', 'references'].map(k => r(`Draft ${k === 'intro' ? 'introduction' : k}`, has(k)))
-    case 'publish': return [r('Choose a target journal', has('targetJournal')), r('Record author approval and journal requirements review', has('submissionReview')), r('Record submission / revision status', has('submissionStatus'))]
+    case 'publish': {
+      const revisions = Array.isArray(d.revisions) ? d.revisions : []
+      return [r('Choose a target journal', has('targetJournal')), r('Record author approval and journal requirements review', has('submissionReview')), r('Record submission / revision status', has('submissionStatus')),
+        ...(revisions.length ? [r('Address recorded reviewer comments with responses and manuscript locations', revisions.every(item => item && item.status === 'addressed' && !!text(item.comment) && !!text(item.response) && !!text(item.location)))] : [])]
+    }
   }
 }
 
@@ -82,7 +86,7 @@ function stageEvidence(p: Project, id: StageId): unknown {
     collect: ['samplingPlan', 'analysisPlan', 'exclusions', 'procedurePlan', 'readinessEvidence', 'readinessNote', 'preregText', 'preregLockedAt', 'targetN', 'mode', 'collectedN', 'status'],
     analyze: ['dataset', 'captures', 'nativeRuns', 'analysisReview'],
     write: ['title', 'abstract', 'intro', 'methods', 'results', 'discussion', 'references', 'credit', 'coi'],
-    publish: ['targetJournal', 'submissionReview', 'submissionStatus', 'submissionId', 'decisionDate', 'revisionPlan', 'osfUrl', 'preregistered', 'dataShared', 'materialsShared', 'dataUrl', 'materialsUrl'],
+    publish: ['targetJournal', 'submissionReview', 'submissionStatus', 'submissionId', 'decisionDate', 'revisionPlan', 'revisions', 'osfUrl', 'preregistered', 'dataShared', 'materialsShared', 'dataUrl', 'materialsUrl'],
   }
   const evidence: Record<string, unknown> = Object.fromEntries(keys[id].map(k => [k, d[k] ?? null]))
   const k = p.stages.analyze.data.kitchen as Record<string, unknown> | undefined
