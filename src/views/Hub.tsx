@@ -3,6 +3,7 @@ import workingPapers from '../lib/workingPaperCatalog.json'
 import { continueWorkingPaper } from '../lib/workingPapers'
 import { FLOW, nextAction, flowTitle, requirements, reviewed } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
+import { StudyTrail } from '../components/StudyTrail'
 import { VideoLightbox } from '../components/VideoLightbox'
 import { navigate } from '../lib/router'
 import { createProject, deleteProject, loadProjects, saveProject, subscribe } from '../lib/store'
@@ -86,8 +87,13 @@ export function Hub() {
       <p className="rh-eyebrow">From question to contribution</p>
       <h2>Give your next idea a place to grow.</h2>
       <p>Start with a working title, continue a prepared paper, or choose a method below. Your study begins without invented evidence or results.</p>
-      <ol className="rh-start-steps">{['Discover evidence', 'Design the study', 'Analyze your data', 'Write & publish'].map((label, i) => <li key={label}><span>0{i + 1}</span>{label}</li>)}</ol>
     </section>}
+
+    {/* the seven checkpoints as one river, every saved study at the checkpoint it waits on */}
+    <StudyTrail projects={ordered} preparedCount={workingPapers.length} onPrepared={() => {
+      const d = document.querySelector<HTMLDetailsElement>('.rh-resource'); if (!d) return
+      d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }}/>
 
     <section className="rh-projects" aria-labelledby="projects-title">
       <div className="shelf-head"><div><p className="rh-eyebrow">Your research shelf</p><h2 className="section-h2" id="projects-title">Studies <span className="rh-total">{projects.length}</span></h2></div>

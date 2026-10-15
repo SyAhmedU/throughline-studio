@@ -1,5 +1,10 @@
 # throughline-studio — project notes
 
+
+## Study trail on the home — 2026-10-15
+
+`components/StudyTrail.tsx` (+ `.trail*` in `views/ResearchHome.css`) renders on the home in both states and **replaces the static four-step `rh-start-steps` list** (its dead CSS removed). The seven real `FLOW` checkpoints are stations on one river, coloured with Studio's A→Z stage hues; each saved study (24 most recent) floats at `nextAction()` — the first checkpoint the author has not reviewed — on the side opposite the station label; fully reviewed studies sit at the estuary. Hover reads title + `reviewed()` count + next checkpoint (`flowTitle`, so meta-study names apply); click/Enter continues at that stage. The spring = the prepared working-paper count (opens that disclosure). Reviews are described as author checks, never quality. Motion: downstream water dashes + bobbing studies; reduced motion → still with a "▶ Let it flow" opt-in (`localStorage.syed_flow`). Smoke `_mobile-audit/_studio_trail.mjs <outdir>` (opens 3 real prepared papers via the app's own flow in an isolated profile; checks 390 px overflow). `scripts/check-research-home.py` still passes.
+
 ## Fluid interaction pass — 2026-10-15
 
 Live at `https://throughline-studio.vercel.app`, deployment `dpl_FEPf5Hatvyf4gP6t35uPBjXrwvPK` confirmed Ready. Motion/focus browser checks passed against the production alias; the existing product suite passed locally (draft history, export hashes, restore, Kitchen handoffs).
