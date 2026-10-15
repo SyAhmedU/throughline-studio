@@ -38,9 +38,21 @@ export function BrandBar({ syncStatus }: { syncStatus?: SyncStatus | null }) {
 
       <div className="bar-spacer" />
 
-      <a className="bar-link" href="https://syahmedu.github.io/research-suite/" target="_blank" rel="noopener noreferrer">
-        Research home <Icon name="external" size={13} />
-      </a>
+      <nav className="studio-nav" aria-label="Studio navigation">
+        <a href="#/">Workspace</a>
+        <details className="studio-library-menu" onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.open = false; e.currentTarget.querySelector('summary')?.focus() } }}>
+          <summary>Library <span aria-hidden="true">⌄</span></summary>
+          <div className="studio-library-links">
+            <span>YOUR RESEARCH COMPANIONS</span>
+            <a href="https://syed-papers.vercel.app/">My papers <span>↗</span></a>
+            <a href="https://syahmedu.github.io/syeds-research-book/">Literature library <span>↗</span></a>
+            <a href="https://theoryscope.vercel.app/">Theories <span>↗</span></a>
+            <a href="https://scalescope.vercel.app/">Measurement scales <span>↗</span></a>
+            <a href="https://syahmedu.github.io/research-suite/">Research home & all tools <span>↗</span></a>
+            <button onClick={e => { e.currentTarget.closest('details')?.removeAttribute('open'); window.dispatchEvent(new Event('studio:references')) }}>Check latest reference data <span>↻</span></button>
+          </div>
+        </details>
+      </nav>
 
       {syncStatus && <SyncPill status={syncStatus} />}
 

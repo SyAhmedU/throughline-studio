@@ -1,5 +1,16 @@
 # throughline-studio — project notes
 
+## Visual cleanup — 2026-10-15
+
+Deployed and verified live at `https://throughline-studio.vercel.app`; deployment `dpl_ATrxcPLjBVCvR9bTSreuEA7VxrXE` is Ready. The dedicated visual/navigation check also passed against the production alias.
+
+Consolidated the duplicate navigation into BrandBar with Workspace and a keyboard-accessible Library disclosure. Latest reference data opens from that menu; the shared refresh dialog/data logic remains intact. Studio intentionally omits the generated research-links launcher and has a local refresh-launcher adaptation (`studio:references`); do not overwrite these when regenerating shared scripts.
+
+Refined the interface with charcoal/teal dark surfaces, sage light surfaces, readable sans-serif project titles, more comfortable controls and workspaces, clearer selected stages, and less nested-card styling in recipe explanations. Kitchen CSS now uses product color tokens throughout its principal surfaces, fields, tabs, tables and text. Detailed cooking narratives remain available. Scoped resource disclosure styles to direct children so they no longer distort nested Kitchen guides.
+
+Validation: production build; existing product and home browser suites (seven mobile stages, saved drafts, exports, restoration and error recovery); dedicated `scripts/check-visual-polish.py` checks integrated navigation/reference dialog at 390/1440 px and captures Kitchen in both themes. No research data/engine contracts changed. Vite's existing ~540 KB main-chunk warning remains.
+
+
 ## Release confirmation — 2026-10-15
 
 The full research-expedition / Kitchen / manuscript-history / study-delivery upgrade is **deployed** at `https://throughline-studio.vercel.app`, production deployment `dpl_F1rdZGHHvuJP6TGX43xjwUt3dpA3` (`throughline-studio-2ytjcxn2n-syahmedus-projects.vercel.app`), Ready with the primary alias confirmed. This supersedes the local-only status in the earlier entries below.
