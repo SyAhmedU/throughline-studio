@@ -10,6 +10,7 @@ import { derivedStatus } from '../lib/artifacts'
 import { STAGES } from '../lib/stages'
 import type { Project, StageId } from '../lib/types'
 import { Icon } from './Icon'
+import { warmStage } from '../lib/stageLoaders'
 
 export function Spine({
   project,
@@ -41,6 +42,8 @@ export function Spine({
               <button
                 className="spine-node-btn"
                 onClick={() => onPick(s.id)}
+                onPointerEnter={() => warmStage(s.id)}
+                onFocus={() => warmStage(s.id)}
                 aria-current={isActive ? 'step' : undefined}
               >
                 <span className="spine-node" aria-hidden="true">

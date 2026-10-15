@@ -28,6 +28,7 @@ export function ProjectView({
   stageId?: StageId
 }) {
   const [project, setProject] = useState<Project | undefined>(() => getProject(projectId))
+  const [focusMode, setFocusMode] = useState(false)
 
   useEffect(() => {
     setProject(getProject(projectId))
@@ -102,7 +103,7 @@ export function ProjectView({
   }
 
   return (
-    <div className="workspace workspace-refined">
+    <div className={`workspace workspace-refined${focusMode ? ' is-focused' : ''}`}>
       <div className="ws-header">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
           <Icon name="back" size={14} /> Projects
@@ -115,6 +116,9 @@ export function ProjectView({
         />
         {project.field && <span className="ws-field">{project.field}</span>}
         <WorkspaceNavigator project={project} onPick={pick} />
+        <button className="btn btn-ghost btn-sm ws-focus-toggle" aria-pressed={focusMode} onClick={() => { setFocusMode(v => !v); window.scrollTo({ top: 0, behavior: 'instant' }) }}>
+          <span aria-hidden="true">{focusMode ? '↗' : '⤢'}</span> {focusMode ? 'Exit focus' : 'Focus mode'}
+        </button>
         {/* SYED-CONCEPT · Mission Control: evidence coverage — stages that
             actually carry artifacts (derived, never a vanity number) */}
         {(() => {

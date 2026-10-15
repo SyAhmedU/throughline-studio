@@ -12,6 +12,7 @@ import { useCloudSync } from './lib/useCloudSync'
 import { Hub } from './views/Hub'
 import { ProjectView } from './views/ProjectView'
 import { SaveStatus } from './components/SaveStatus'
+import { StudioMotion } from './components/StudioMotion'
 
 // Worked examples carry 20 detailed case studies; load that chunk on demand so
 // it never weighs down the hub/workspace.
@@ -30,9 +31,9 @@ export default function App() {
   // Hash routing keeps the old scroll position when the view swaps, which
   // strands you mid-page after a stage/route change. Reset to top whenever the
   // route identity changes (instant — a 2000px smooth-scroll would be worse).
-  const routeKey = `${route.name}:${route.projectId ?? ''}:${route.stageId ?? ''}:${route.slug ?? ''}`
+  const routeKey = `${route.name}:${route.projectId ?? ''}:${route.stageId ?? ''}:${route.slug ?? ''}:${route.code ?? ''}`
   useEffect(() => {
-    window.scrollTo(0, 0)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [routeKey])
 
   // Suite topic hand-off (hub Quick Start → here), same pattern as ?seed=/?idea=
@@ -62,6 +63,7 @@ export default function App() {
       <Ambient />
       <BrandBar syncStatus={sync.enabled ? sync.status : null} />
       <SaveStatus />
+      <StudioMotion routeKey={routeKey} stage={route.stageId} />
       <div className="app-body">
         {handoff && <p role="status" style={{ padding: '16px 24px' }}>{handoff} <a href="https://syed-papers.vercel.app/">Back to papers</a></p>}
         {route.name === 'project' && route.projectId ? (

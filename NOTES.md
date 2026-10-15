@@ -1,5 +1,16 @@
 # throughline-studio — project notes
 
+## Fluid interaction pass — 2026-10-15
+
+Live at `https://throughline-studio.vercel.app`, deployment `dpl_FEPf5Hatvyf4gP6t35uPBjXrwvPK` confirmed Ready. Motion/focus browser checks passed against the production alias; the existing product suite passed locally (draft history, export hashes, restore, Kitchen handoffs).
+
+Studio now uses `StudioMotion.tsx` + `styles/motion.css` instead of importing the two generated `juice`/`dynamic` runtimes. This removes duplicate DOM observers and numeric count-up rewriting. Directional 320 ms stage entrances, staggered home milestones, intent lighting on the home feature card, gentle interactive states and disclosure entrances all respect reduced motion. Runtime preference changes cancel route animation and disable pointer lighting; touch devices skip pointer effects. Existing editors are not remounted for animation.
+
+`stageLoaders.ts` shares lazy imports with hover/keyboard stage preloading, with Save-Data/2G exclusions and nonfatal preload failures. No research fetches or AI calls are triggered by intent. Main chunk ~535 KB / 157 KB gzip, down from ~540 KB; existing Vite advisory remains.
+
+Workspace Focus mode removes the upper overview and navigation rail, widens the working area and keeps stage selection, review requirements, notes, exports and draft history available. It changes layout only, preserving the actual editor DOM and draft values. `scripts/check-flow-motion.py` validates normal/reduced motion, runtime preference changes, intent preloading, forward/back stage movement, editor identity and saved draft preservation, review access and 390 px reflow. The existing home suite also passes including failed-chunk recovery and seven mobile stages.
+
+
 ## Visual cleanup — 2026-10-15
 
 Deployed and verified live at `https://throughline-studio.vercel.app`; deployment `dpl_ATrxcPLjBVCvR9bTSreuEA7VxrXE` is Ready. The dedicated visual/navigation check also passed against the production alias.

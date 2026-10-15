@@ -9,6 +9,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { carrySummary, derivedStatus } from '../lib/artifacts'
 import { STAGES, stageDef } from '../lib/stages'
+import { stageLoaders, warmStage } from '../lib/stageLoaders'
 import { Checkpoint, StudyContext } from '../components/StudyJourney'
 import { flowTitle, isMetaStudy, requirements, reviewed } from '../lib/studyFlow'
 import { getProject, setStageNotes } from '../lib/store'
@@ -19,13 +20,13 @@ import type { Project, StageId, StageStatus } from '../lib/types'
 // layer, Measure → the scale catalog) that shouldn't weigh down the hub or
 // each other. Same-origin chunk fetches resolve in ms; the stage-grid enter
 // animation absorbs the swap.
-const AnalyzeBody = lazy(() => import('./AnalyzeBody').then((m) => ({ default: m.AnalyzeBody })))
-const CollectBody = lazy(() => import('./CollectBody').then((m) => ({ default: m.CollectBody })))
-const DiscoverBody = lazy(() => import('./DiscoverBody').then((m) => ({ default: m.DiscoverBody })))
-const FrameBody = lazy(() => import('./FrameBody').then((m) => ({ default: m.FrameBody })))
-const MeasureBody = lazy(() => import('./MeasureBody').then((m) => ({ default: m.MeasureBody })))
-const PublishBody = lazy(() => import('./PublishBody').then((m) => ({ default: m.PublishBody })))
-const WriteBody = lazy(() => import('./WriteBody').then((m) => ({ default: m.WriteBody })))
+const AnalyzeBody = lazy(stageLoaders.analyze)
+const CollectBody = lazy(stageLoaders.collect)
+const DiscoverBody = lazy(stageLoaders.discover)
+const FrameBody = lazy(stageLoaders.frame)
+const MeasureBody = lazy(stageLoaders.measure)
+const PublishBody = lazy(stageLoaders.publish)
+const WriteBody = lazy(stageLoaders.write)
 
 const MetaCollectBody = lazy(() => import('./MetaCollectBody').then(m => ({ default: m.MetaCollectBody })))
 const NoBody = () => null
@@ -138,9 +139,9 @@ export function StageShell({
         </aside>
       </div>
       <nav className="stage-pagination" aria-label="Adjacent stages">
-        {previous ? <button className="btn btn-ghost" onClick={() => onPick(previous.id)}>← {flowTitle(project, previous.id)}</button> : <span/>}
+        {previous ? <button className="btn btn-ghost" onPointerEnter={() => warmStage(previous.id)} onFocus={() => warmStage(previous.id)} onClick={() => onPick(previous.id)}>← {flowTitle(project, previous.id)}</button> : <span/>}
         <small>Browsing does not mark a stage reviewed.</small>
-        {next ? <button className="btn btn-ghost" onClick={() => onPick(next.id)}>{flowTitle(project, next.id)} →</button> : <span/>}
+        {next ? <button className="btn btn-ghost" onPointerEnter={() => warmStage(next.id)} onFocus={() => warmStage(next.id)} onClick={() => onPick(next.id)}>{flowTitle(project, next.id)} →</button> : <span/>}
       </nav>
     </section>
   )

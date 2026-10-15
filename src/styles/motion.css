@@ -1,0 +1,81 @@
+/* A single motion vocabulary. Content is readable before any animation runs. */
+:root { --flow-ease:cubic-bezier(.22,1,.36,1); }
+html { scroll-padding-top:100px; }
+:root[data-product-design] :is(.stage-head,.stage-grid,.stage-main > *,.stage-side > *,.thread-tray > *,.spine-node) {
+  animation:none; opacity:1;
+}
+.rh-focus,.rh-start { position:relative; isolation:isolate; }
+.rh-focus::after,.rh-start::after {
+  content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:radial-gradient(420px circle at var(--spot-x,50%) var(--spot-y,0%),color-mix(in srgb,var(--product-accent) 9%,transparent),transparent 75%);
+  opacity:var(--spotlight,0); transition:opacity .4s ease; z-index:0;
+}
+.research-home .rh-steps button { position:relative; z-index:1; }
+.ws-focus-toggle { white-space:nowrap; }
+.ws-focus-toggle[aria-pressed=true] { border-color:var(--accent); color:var(--accent); background:var(--surface-2); }
+.workspace-refined.is-focused { max-width:1080px; }
+.workspace-refined.is-focused > :is(.ws-q-label,.ws-question,.study-journey,.working-paper-source,.ws-evidence-drawer) { display:none; }
+.workspace-refined.is-focused .ws-body { grid-template-columns:minmax(0,1fr); }
+.workspace-refined.is-focused .spine { display:none; }
+.workspace-refined.is-focused .stage-grid { grid-template-columns:minmax(0,1fr); }
+.workspace-refined.is-focused .stage-side { display:block; margin-top:28px; }
+.workspace-refined.is-focused .stage-side > .side-card:not(.checkpoint) { display:none; }
+.workspace-refined.is-focused .ws-mobile-stage { display:grid; max-width:360px; margin:16px 0 28px; }
+.workspace-refined.is-focused .ws-mobile-stage { gap:8px; font-size:12px; color:var(--ink-2); }
+.workspace-refined.is-focused .ws-mobile-stage select { width:100%; min-height:48px; padding:10px 14px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font:15px var(--sans); }
+.workspace-refined .stage-verb { letter-spacing:normal; }
+.workspace-refined.is-focused .ws-header { position:sticky; top:76px; z-index:30; background:var(--bg); padding:14px 0; }
+.workspace-refined.is-focused .stage-blurb { max-width:68ch; }
+.workspace-refined.is-focused .stage-main > .study-context { margin-bottom:28px; }
+.stage-loading { position:relative; overflow:hidden; min-height:120px; }
+.stage-loading::after { content:''; position:absolute; left:0; bottom:0; height:2px; width:30%; background:var(--accent); }
+
+@media(prefers-reduced-motion:no-preference) {
+  html { scroll-behavior:smooth; }
+  :root[data-product-design] body { transition:background-color .3s ease,color .3s ease; }
+  :root[data-product-design] :is(button,.btn,summary) {
+    transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .25s ease,transform .22s var(--flow-ease);
+  }
+  :root[data-product-design] :is(button,.btn):active:not(:disabled) { transform:translateY(1px) scale(.98); transition-duration:70ms; }
+  :root[data-product-design] :is(input,textarea,select) { transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease; }
+  :root[data-product-design] :is(input,textarea,select):focus-visible { box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 12%,transparent); }
+  .research-home .rh-card { transition:transform .35s var(--flow-ease),border-color .25s ease,box-shadow .35s ease; }
+  .research-home .rh-steps button > span,.spine-node { transition:background-color .25s ease,color .25s ease,box-shadow .25s ease,transform .3s var(--flow-ease); }
+  .research-home .rh-steps button:hover > span { transform:translateY(-3px); }
+  .workspace-refined .spine-item { transition:background-color .25s ease; }
+  .workspace-refined .spine-node-btn:hover .spine-node { transform:scale(1.08); }
+  .research-home .rh-card-progress span { transition:background-color .3s ease; }
+  .stage-loading::after { animation:flow-loading 1.4s ease-in-out infinite alternate; }
+  .studio-library-menu[open] .studio-library-links { animation:flow-menu .2s var(--flow-ease); transform-origin:top right; }
+  .research-home details[open] > :not(summary),.research-kitchen details[open] > :not(summary) { animation:flow-disclose .25s var(--flow-ease); }
+  .research-home .rh-heading { animation:flow-disclose .45s var(--flow-ease); }
+  .research-home .rh-steps li { animation:flow-disclose .4s var(--flow-ease) both; }
+  .research-home .rh-steps li:nth-child(2) { animation-delay:35ms; }
+  .research-home .rh-steps li:nth-child(3) { animation-delay:70ms; }
+  .research-home .rh-steps li:nth-child(4) { animation-delay:105ms; }
+  .research-home .rh-steps li:nth-child(5) { animation-delay:140ms; }
+  .research-home .rh-steps li:nth-child(6) { animation-delay:175ms; }
+  .research-home .rh-steps li:nth-child(7) { animation-delay:210ms; }
+  @media(hover:hover) {
+    :root[data-product-design] .research-home .rh-card:hover { transform:translateY(-4px); box-shadow:0 18px 35px -25px #0008; }
+    :root[data-product-design] .btn-fill:hover { transform:translateY(-2px); box-shadow:0 7px 22px -10px var(--accent)!important; }
+    .k-recipes button:hover { transform:translateY(-2px); }
+  }
+}
+@keyframes flow-loading { from { transform:translateX(-100%); } to { transform:translateX(340%); } }
+@keyframes flow-menu { from { opacity:0; transform:translateY(-5px) scale(.98); } to { opacity:1; transform:none; } }
+@keyframes flow-disclose { from { opacity:.4; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@media(max-width:650px) {
+  .workspace-refined.is-focused .ws-header { position:static; }
+  .workspace-refined.is-focused .ws-mobile-stage { max-width:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto!important; }
+  .rh-focus::after,.rh-start::after { display:none; }
+  .stage-loading::after { width:100%; opacity:.35; }
+  *,*::before,*::after { animation:none!important; transition:none!important; }
+}
+@media print {
+  .rh-focus::after,.rh-start::after,.ws-focus-toggle { display:none; }
+  .workspace-refined.is-focused .ws-header { position:static; }
+}

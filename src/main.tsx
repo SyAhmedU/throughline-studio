@@ -4,8 +4,7 @@ import App from './App'
 import './styles/theme.css'
 import './styles/app.css'
 import './styles/product.css'
-import './juice'
-import './dynamic'
+import './styles/motion.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
