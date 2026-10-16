@@ -5,6 +5,7 @@ import './styles/theme.css'
 import './styles/app.css'
 import './styles/product.css'
 import './styles/motion.css'
+import './guide'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
