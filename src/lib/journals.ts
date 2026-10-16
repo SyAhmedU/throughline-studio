@@ -1,6 +1,6 @@
 // ============================================================================
 // Throughline Studio — Publish stage journal source.
-// Streams the suite's hand-maintained journal catalogue (1,959 Scopus journals
+// Streams the suite's hand-maintained journal catalogue (1,805 Scopus journals
 // — JournalTime's data.js, published as a CORS JSON snapshot). Every metric is
 // verbatim from the catalogue; `source: 'estimated'` turnarounds were never
 // measured and are badged as such. Suggestions are a deterministic token match

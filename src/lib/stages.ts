@@ -202,7 +202,7 @@ export const STAGES: StageDef[] = [
       {
         name: 'ScholarScope',
         action: 'Choose the journal',
-        role: 'Publish desk: 1,959 journals’ turnaround data, Find-My-Journal wizard, and live OpenAlex journal metrics.',
+        role: 'Publish desk: 1,805 journals’ turnaround data, Find-My-Journal wizard, and live OpenAlex journal metrics.',
         url: 'https://syahmedu.github.io/scholarscope/',
       },
       {
