@@ -1,5 +1,19 @@
 # throughline-studio — project notes
 
+## Study blueprint on the home — 2026-10-17
+
+`components/StudyBlueprint.tsx` (+ `.bp*` in `views/ResearchHome.css`) answers "what would my study look like?". The **empty home** shows it in place of the old `rh-start` pitch card. Returning users see it above the resources. `StudyTrail` now renders **only when studies exist**, because with none it was decorative.
+- **How it works:** the topic or question is matched to the Research Book's 167 constructs. A construct counts when its name or an identifier appears as a phrase; matching takes the longest phrase first, allows no overlaps, keeps up to 3 constructs, and falls back to `searchConstructs`.
+- **What each of the seven stages shows** (all real data):
+  - Discover: coded paper count per construct, plus the most-cited `top` papers from `corpus-snapshot.json` (DOI, citations).
+  - Frame and Measure: the theories and scales from the Book crosswalk (`lib/graph.ts`), enriched from `loadTheories` and `loadScales` (items, α range), badged "machine-matched · verify".
+  - Collect: `nForCorr(.20)`, plus minutes at a stated 6 s per item.
+  - Analyze: chosen by construct count (1 = descriptives/α, 2 = correlation/regression, 3 = Model 4 mediation).
+  - Write and Publish: describe what those stages assemble.
+- No AI is used, and the rule is printed under the blueprint.
+- **"Start this study →"** = the `?topic=` hand-off: `createProject(title = the user's words, capitalised)` + `question`. Nothing is pre-filled or reviewed.
+- Smoke: `_mobile-audit/_bp_start.mjs <dist>`. `scripts/check-research-home.py` still passes.
+
 
 ## Study trail on the home — 2026-10-15
 

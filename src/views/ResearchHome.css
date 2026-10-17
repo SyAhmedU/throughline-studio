@@ -128,3 +128,44 @@
 @keyframes trail-drift { to { stroke-dashoffset:-50; } }
 @keyframes trail-bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-2.5px); } }
 @media (max-width:640px) { .trail-name { font-size:10.5px; } }
+
+/* ── Study blueprint (components/StudyBlueprint.tsx) ── */
+.bp { border:1px solid var(--line-2); border-radius:var(--r-lg); padding:32px; background:var(--grad-soft); margin:8px 0 28px; }
+.bp-head h2 { font:500 clamp(24px,3vw,34px) var(--serif); margin:0 0 16px; }
+.bp-ask { display:flex; flex-direction:column; gap:6px; max-width:640px; }
+.bp-ask label { font:600 12px var(--sans); letter-spacing:.04em; color:var(--ink-mute); }
+.bp-ask input { font:400 18px var(--serif); padding:12px 14px; border:1px solid var(--line-2); border-radius:var(--r); background:var(--surface); color:var(--ink); min-width:0; }
+.bp-ask input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+.bp-try { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 4px; }
+.bp-try button { font:500 13px var(--sans); padding:6px 12px; border-radius:var(--r-pill); border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2); cursor:pointer; min-height:34px; }
+.bp-try button[aria-pressed="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.bp-wait { color:var(--ink-2); margin:20px 0 0; }
+.bp-found { margin:22px 0 4px; font-size:14px; color:var(--ink-2); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.bp-found b { font-weight:600; color:var(--ink); padding:3px 10px; border-radius:var(--r-pill); border:1px solid color-mix(in srgb,var(--c) 55%,transparent); background:color-mix(in srgb,var(--c) 12%,transparent); }
+.bp-line { list-style:none; padding:0; margin:18px 0 0; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:0; position:relative; }
+.bp-line::before { content:""; position:absolute; left:0; right:0; top:7px; height:3px; border-radius:3px; background:linear-gradient(90deg,#FF9656,#F24C72 50%,#9270F4); opacity:.75; }
+.bp-line > li { position:relative; padding:26px 12px 4px 0; min-width:0; display:flex; flex-direction:column; gap:6px; }
+.bp-line > li::before { content:""; position:absolute; left:0; top:0; width:17px; height:17px; border-radius:50%; background:var(--c); box-shadow:0 0 0 4px var(--bg); }
+.bp-k { font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--c); }
+.bp-line strong { font:600 26px/1.1 var(--serif); color:var(--ink); }
+.bp-line strong small { display:block; font:400 12.5px/1.35 var(--sans); color:var(--ink-2); margin-top:3px; }
+.bp-line strong.bp-sm { font:600 15px/1.3 var(--sans); }
+.bp-line ul { list-style:none; padding:0; margin:4px 0 0; display:flex; flex-direction:column; gap:8px; }
+.bp-line ul li { font-size:13px; line-height:1.35; }
+.bp-line ul a { color:var(--ink); text-decoration:none; border-bottom:1px solid color-mix(in srgb,var(--c) 50%,transparent); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.bp-line ul a:hover { border-bottom-color:var(--c); }
+.bp-line ul small { display:block; color:var(--ink-mute); font-size:11.5px; margin-top:2px; }
+.bp-line p { font-size:12.5px; line-height:1.45; color:var(--ink-2); margin:0; }
+.bp-more { font-size:12px; color:var(--c); text-decoration:none; }
+.bp-verify { font:600 10px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--ink-mute); }
+.bp-go { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:24px 0 0; padding-top:18px; border-top:1px dashed var(--line-2); }
+.bp-go span { font-size:13px; color:var(--ink-2); flex:1 1 280px; }
+.bp-rule { font-size:12px; color:var(--ink-mute); margin:16px 0 0; max-width:900px; }
+@media (max-width:1100px) { .bp-line { grid-template-columns:repeat(4,minmax(0,1fr)); row-gap:26px; } .bp-line::before { display:none; } }
+@media (max-width:700px) {
+  .bp { padding:20px 16px; }
+  .bp-line { grid-template-columns:minmax(0,1fr); row-gap:0; }
+  .bp-line::before { display:block; left:7px; right:auto; top:8px; bottom:8px; width:3px; height:auto; background:linear-gradient(180deg,#FF9656,#F24C72 50%,#9270F4); }
+  .bp-line > li { padding:0 0 20px 32px; }
+  .bp-line strong { font-size:22px; }
+}

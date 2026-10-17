@@ -4,6 +4,7 @@ import { continueWorkingPaper } from '../lib/workingPapers'
 import { FLOW, nextAction, flowTitle, requirements, reviewed } from '../lib/studyFlow'
 import { Icon } from '../components/Icon'
 import { StudyTrail } from '../components/StudyTrail'
+import { StudyBlueprint } from '../components/StudyBlueprint'
 import { VideoLightbox } from '../components/VideoLightbox'
 import { navigate } from '../lib/router'
 import { createProject, deleteProject, loadProjects, saveProject, subscribe } from '../lib/store'
@@ -38,6 +39,10 @@ export function Hub() {
     const complete = nextAction(p) === null
     return matches && (filter === 'all' || (filter === 'reviewed' ? complete : !complete))
   })
+  function startFromBlueprint(title: string, question: string) {
+    const p = saveProject({ ...createProject(title || 'Untitled study', ''), question })
+    navigate(`/p/${p.id}`)
+  }
   async function openPaper() {
     setPaperState('Opening study…')
     try { resume(await continueWorkingPaper(paperId)); setPaperState('') }
@@ -83,17 +88,13 @@ export function Hub() {
         <div className="rh-review-count"><strong>{reviewCount(current)}<span> / 7</span></strong><span>checkpoints reviewed by you</span></div>
         <p className="rh-note">Reviews reflect your recorded checks. They do not establish study validity or journal acceptance.</p>
       </aside>
-    </section> : <section className="rh-start" aria-label="Start a study">
-      <p className="rh-eyebrow">From question to contribution</p>
-      <h2>Give your next idea a place to grow.</h2>
-      <p>Start with a working title, continue a prepared paper, or choose a method below. Your study begins without invented evidence or results.</p>
-    </section>}
+    </section> : <StudyBlueprint onStart={startFromBlueprint}/>}
 
     {/* the seven checkpoints as one river, every saved study at the checkpoint it waits on */}
-    <StudyTrail projects={ordered} preparedCount={workingPapers.length} onPrepared={() => {
+    {projects.length > 0 && <StudyTrail projects={ordered} preparedCount={workingPapers.length} onPrepared={() => {
       const d = document.querySelector<HTMLDetailsElement>('.rh-resource'); if (!d) return
       d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }}/>
+    }}/>}
 
     <section className="rh-projects" aria-labelledby="projects-title">
       <div className="shelf-head"><div><p className="rh-eyebrow">Your research shelf</p><h2 className="section-h2" id="projects-title">Studies <span className="rh-total">{projects.length}</span></h2></div>
@@ -110,6 +111,8 @@ export function Hub() {
         }} onDelete={() => { if (confirm(`Delete “${p.title}”? This cannot be undone.`)) { deleteProject(p.id); refresh() } }}/>)}</div> : <div className="rh-empty"><h3>No studies match this view.</h3><p>Try a different phrase or checkpoint status.</p><button className="btn btn-ghost" onClick={() => { setQuery(''); setFilter('all') }}>Clear filters</button></div>}
       </> : <p className="rh-empty">Your saved studies will appear here. You can also restore a Studio JSON backup.</p>}
     </section>
+
+    {current && <StudyBlueprint onStart={startFromBlueprint}/>}
 
     <section className="rh-resources" aria-labelledby="resources-title">
       <div><p className="rh-eyebrow">Start from what you have</p><h2 className="section-h2" id="resources-title">A head start, when you need one.</h2></div>
